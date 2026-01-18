@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Explorador de Datos</h2>
+
+{% for name, html_table in tables.items() %}
+    {% if html_table is not none %}
+    <div class="card mb-4">
+        <div class="card-header bg-white fw-bold">{{ name }}</div>
+        <div class="card-body table-responsive" style="max-height: 400px; overflow-y: auto;">
+            {{ html_table | safe }}
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-5 fade-in">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: 'Inter', sans-serif;">Análisis Detallado</h2>
+        <p class="text-muted mb-0">Desglose de gastos y composición profunda de cartera.</p>
+    </div>
+</div>
+
+<!-- Upcoming Expenses -->
+<div class="row mb-5 fade-in">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0 text-warning">Gastos a la vista</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_expenses %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="ps-4 py-3">Fecha</th>
+                                <th class="py-3">Concepto</th>
+                                <th class="py-3">Categoría</th>
+                                <th class="text-end pe-4 py-3">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in upcoming_expenses %}
+                            <tr>
+                                <td class="ps-4 text-muted">{{ expense.fecha }}</td>
+                                <td class="fw-medium text-dark">{{ expense.concepto }}</td>
+                                <td><span class="badge rounded-pill bg-light text-dark border">{{ expense.categoria }}</span></td>
+                                <td class="text-end pe-4 fw-bold">{{ "{:,.2f}".format(expense.cantidad) }} €</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center p-5 text-muted">
+                    <p class="mb-0">No hay gastos planificados a la vista.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Expense Treemap -->
+<div class="row mb-5 fade-in">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0">Desglose de Gastos por Categoría</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="chart-expenses" style="width: 100%; height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Moved Table: Detalle de Activos -->
+<div class="card border-0 shadow-sm mb-5 fade-in" style="border-radius: 16px;">
+    <div class="card-header bg-white p-4 border-bottom-0">
+        <h5 class="fw-bold m-0">Detalle de Activos en Cartera</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="bg-light text-muted text-uppercase small">
+                <tr>
+                    <th class="ps-4 py-3">Activo</th>
+                    <th class="py-3">Tipo</th>
+                    <th class="text-end py-3">Precio</th>
+                    <th class="text-end py-3">Valor</th>
+                    <th class="text-end pe-4 py-3">Rentabilidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, row in portfolio.df_cartera.iterrows() %}
+                <tr>
+                    <td class="ps-4 fw-medium text-dark">{{ row['nombre'] }}</td>
+                    <td><span class="badge rounded-pill bg-light text-dark border">{{ row['tipo'] }}</span></td>
+                    <td class="text-end text-muted">{{ "{:,.2f}".format(row['precio_actual']) }} €</td>
+                    <td class="text-end fw-bold">{{ "{:,.2f}".format(row['valor_mercado']) }} €</td>
+                    <td class="text-end pe-4">
+                        <span class="badge rounded-pill {{ 'bg-success-subtle text-success' if row['rentabilidad'] >= 0 else 'bg-danger-subtle text-danger' }}">
+                            {{ "{:,.2f}".format(row['rentabilidad']) }} %
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
+<script>
+    const chartDom = document.getElementById('chart-expenses');
+    const myChart = echarts.init(chartDom);
+    const data = {{ expenses_data | tojson }};
+
+    const option = {
+        tooltip: {
+            formatter: '{b}: {c} €'
+        },
+        series: [{
+            type: 'treemap',
+            data: data,
+            roam: 'move', // Allow moving
+            nodeClick: false,
+            breadcrumb: { show: false },
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            label: {
+                show: true,
+                formatter: '{b}\n{c} €',
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: 12
+            },
+            upperLabel: {
+                show: false
+            },
+            itemStyle: {
+                borderColor: '#fff',
+                borderWidth: 2,
+                gapWidth: 1
+            },
+            visibleMinArea: 100 // Show label if area is larger than 100px
+        }]
+    };
+
+    myChart.setOption(option);
+    window.addEventListener('resize', () => myChart.resize());
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; }
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header & Actions -->
+<div class="d-flex justify-content-between align-items-center mb-5 fade-in">
+    <div>
+        <h2 class="fw-bold text-dark mb-1" style="font-family: 'Inter', sans-serif;">Resumen Financiero</h2>
+        <p class="text-muted mb-0">Visión global de tu patrimonio y flujo de caja.</p>
+    </div>
+    <form action="/update-prices" method="post" onsubmit="return showLoading(this);">
+        <button type="submit" class="btn btn-dark shadow-sm d-flex align-items-center gap-2 px-3 py-2" id="updateBtn" style="border-radius: 10px;">
+            <span class="normal-text font-monospace small">ACTUALIZAR MERCADO</span>
+            <span class="loading-text small" style="display:none;">ACTUALIZANDO...</span>
+        </button>
+    </form>
+</div>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="mb-4">
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- KPI Cards Level 1 (Primary) -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 kpi-card" style="background: linear-gradient(145deg, #ffffff, #f8f9fa);">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Patrimonio Neto</div>
+                <div class="display-6 fw-bold text-dark">{{ "{:,.2f}".format(portfolio.total_patrimonio) }} €</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Rentabilidad</div>
+                <div class="display-6 fw-bold" style="color: {{ '#10b981' if portfolio.rentabilidad_total >= 0 else '#ef4444' }}">
+                    {{ "{:,.2f}".format(portfolio.rentabilidad_total) }} %
+                </div>
+                <small class="text-muted">Retorno total acumulado</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Riesgo</div>
+                <div class="display-6 fw-bold text-secondary">{{ "{:,.1f}".format(portfolio.pct_riesgo) }} %</div>
+                <small class="text-muted">Exposición a renta variable</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards Level 2 (Secondary/Health) -->
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Liquidez</div>
+                <div class="display-6 fw-bold text-info" style="font-size: 1.8rem;">{{ "{:,.2f}".format(portfolio.liquidez) }} €</div>
+                <small class="text-muted">Cash instantáneo</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Ahorro Mensual</div>
+                <div class="display-6 fw-bold text-primary" style="font-size: 1.8rem;">{{ "{:,.0f}".format(forecast.net_flow) }} €</div>
+                <small class="text-muted">Promedio neto (6m)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Runway</div>
+                <div class="display-6 fw-bold text-info" style="font-size: 1.8rem;">{{ "{:,.1f}".format(portfolio.runway_months) }}</div>
+                <small class="text-muted">Meses de libertad</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 kpi-card">
+            <div class="card-body p-4">
+                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Tasa Ahorro</div>
+                <div class="display-6 fw-bold text-success" style="font-size: 1.8rem;">{{ "{:,.1f}".format(portfolio.savings_rate) }} %</div>
+                <small class="text-muted">Eficiencia de retención</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- History & Forecast Row -->
+<div class="row g-4 mb-5">
+    <!-- Portfolio History Chart (NEW) -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0 text-primary">Evolución Valor Cartera</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="chart-history" style="width: 100%; height: 350px;"></div>
+                {% if not charts.history %}
+                <div class="text-center p-5 text-muted">
+                    <p class="mb-0">No hay historial disponible aún.</p>
+                    <small>Actualiza precios hoy para crear el primer punto.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenarios Section (Sidebar style) -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; overflow: hidden;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0">🔮 Escenarios</h5>
+                <ul class="nav nav-pills mt-3" id="scenarioTabs" role="tablist">
+                    <li class="nav-item me-2" role="presentation">
+                        <button class="nav-link active py-1 px-3 small fw-bold" id="six-months-tab" data-bs-toggle="pill" data-bs-target="#six-months" type="button">6M</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3 small fw-bold" id="eoy-tab" data-bs-toggle="pill" data-bs-target="#eoy" type="button">FIN DE AÑO</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body bg-light p-4 pt-0">
+                <div class="tab-content" id="scenarioTabsContent">
+                    <!-- 6M -->
+                    <div class="tab-pane fade show active" id="six-months">
+                        <div class="d-flex flex-column gap-3">
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-success shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Optimista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.optimistic) }} €</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-secondary shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Realista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.realistic) }} €</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-danger shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Pesimista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.pessimistic) }} €</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- EOY -->
+                    <div class="tab-pane fade" id="eoy">
+                        <div class="d-flex flex-column gap-3">
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-success shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Optimista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.optimistic) }} €</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-secondary shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Realista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.realistic) }} €</span>
+                            </div>
+                            <div class="p-3 bg-white rounded-3 border-start border-4 border-danger shadow-sm">
+                                <span class="d-block text-muted text-uppercase small fw-bold">Pesimista</span>
+                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.pessimistic) }} €</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Allocation (Full Width) -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0">Distribución de Cartera</h5>
+            </div>
+            <div class="card-body">
+                <!-- Increased height to 500px for better visibility of IDs -->
+                <div id="chart-allocation" style="width: 100%; height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance (Full Width) -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0">Rendimiento por Activo</h5>
+            </div>
+            <div class="card-body p-0 pe-3">
+                <div id="chart-performance" style="width: 100%; height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time Series Charts -->
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0 text-success">Evolución Ingresos</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="chart-ingresos" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
+            <div class="card-header bg-white p-4 border-bottom-0">
+                <h5 class="fw-bold m-0 text-danger">Evolución Gastos</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="chart-gastos" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
+
+<script>
+    const initChart = (id, option) => {
+        if (!option) return;
+        const chart = echarts.init(document.getElementById(id));
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    };
+
+    var dataIngresos = {{ charts.ingresos | tojson }};
+    var dataGastos = {{ charts.gastos | tojson }};
+    var dataAllocation = {{ charts.allocation | tojson }};
+    var dataPerformance = {{ charts.performance | tojson }};
+    var dataHistory = {{ charts.history | tojson if charts.history else 'null' }};
+
+    if (dataAllocation && dataAllocation.series) {
+        var totalValue = 0;
+        if (dataAllocation.series.data) {
+            dataAllocation.series.data.forEach(function(item) {
+                 if(item.children) {
+                     item.children.forEach(function(child) {
+                         totalValue += child.value;
+                     });
+                 } else if (item.value) {
+                     totalValue += item.value;
+                 }
+            });
+        }
+
+        dataAllocation.tooltip = {
+            trigger: 'item',
+            formatter: function (params) {
+                var p = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(2) : 0;
+                return `${params.name}: ${params.value.toLocaleString()} € (${p}%)`;
+            }
+        };
+    }
+
+    if (dataPerformance && dataPerformance.series && dataPerformance.series.length > 0) {
+        dataPerformance.tooltip = {
+            trigger: 'item',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            borderColor: '#e5e7eb',
+            textStyle: { color: '#1f2937' },
+            formatter: function (params) {
+                const d = params.data;
+                const color = d.value >= 0 ? '#10b981' : '#ef4444';
+                return `
+                    <div style="font-family: Inter, sans-serif; min-width: 200px;">
+                        <div style="font-weight: 600; margin-bottom: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">
+                            ${d.nombre_completo}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                            <span style="color: #6b7280;">P/L:</span>
+                            <span style="font-weight: 600; color: ${color}">${d.value.toLocaleString()} €</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #6b7280;">Rentabilidad:</span>
+                            <span style="font-weight: 600; color: ${color}">${d.rentabilidad}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed #e5e7eb; margin-top: 4px; padding-top: 4px;">
+                            <span style="color: #6b7280;">Valor Actual:</span>
+                            <span style="font-weight: 600;">${d.valor_mercado.toLocaleString()} €</span>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+    }
+
+    initChart('chart-ingresos', dataIngresos);
+    initChart('chart-gastos', dataGastos);
+    initChart('chart-allocation', dataAllocation);
+    initChart('chart-performance', dataPerformance);
+    initChart('chart-history', dataHistory);
+
+    function showLoading(form) {
+        var btn = document.getElementById('updateBtn');
+        btn.disabled = true;
+        btn.querySelector('.normal-text').style.display = 'none';
+        btn.querySelector('.loading-text').style.display = 'inline-block';
+        return true;
+    }
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+    
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; }
+    
+    .kpi-card { transition: transform 0.2s; border-radius: 16px; }
+    .kpi-card:hover { transform: translateY(-5px); }
+    
+    .fade-in { animation: fadeIn 0.5s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .nav-pills .nav-link { color: #6c757d; background-color: transparent; transition: all 0.2s; }
+    .nav-pills .nav-link:hover { color: #212529; background-color: rgba(0,0,0,0.05); }
+    .nav-pills .nav-link.active { color: #fff; background-color: #212529; }
+</style>
+{% endblock %}
