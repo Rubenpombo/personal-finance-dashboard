@@ -37,11 +37,11 @@ Al empezar, crea estos archivos en la carpeta `/data`. Asegúrate de respetar lo
 **`data/activos.csv`** (Tu catálogo de productos)
 | Columna | Descripción | Ejemplo |
 | :--- | :--- | :--- |
-| `id` | Identificador único (Clave para todo). | `BBVA_CASH` |
-| `nombre` | Nombre legible. | `Cuenta Corriente` |
-| `isin` | ISIN (fondos) o 'CASH' (dinero). | `ES0123456789` |
-| `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Efectivo` |
-| `fuente` | `quefondos` (automático) o `manual`. | `manual` |
+| `id` | Identificador único (Clave para todo). | `SP500_ETF` |
+| `nombre` | Nombre legible. | `Vanguard S&P 500 UCITS ETF` |
+| `isin` | ISIN (fondos) o 'CASH' (dinero). | `IE00B3XXRP09` |
+| `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
+| `fuente` | `quefondos` (automático) o `manual`. | `quefondos` |
 
 **`data/saldo_inicial.csv`** (Tu punto de partida)
 | Columna | Descripción | Ejemplo |
