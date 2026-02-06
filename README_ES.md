@@ -1,5 +1,7 @@
 # Sistema de Gestión Patrimonial (Finanzas Personales)
 
+[README](README.md)
+
 Un dashboard financiero **privado, local y moderno** diseñado para tener control total sobre tu patrimonio, ahorro e inversiones. Tus datos son tuyos y viven exclusivamente en tu ordenador.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
