@@ -9,4 +9,4 @@ echo "---------------------------"
 export FLASK_APP=src/web/app.py
 export FLASK_ENV=development
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/web"
-flask run --port 8501
+flask run --host 0.0.0.0 --port 8501
