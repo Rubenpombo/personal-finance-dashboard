@@ -1,117 +1,117 @@
-# Sistema de Gestión Patrimonial (Finanzas Personales)
+# Personal Wealth Management System (Personal Finance)
 
-Un dashboard financiero **privado, local y moderno** diseñado para tener control total sobre tu patrimonio, ahorro e inversiones. Tus datos son tuyos y viven exclusivamente en tu ordenador.
+[🇪🇸 Versión en Español](README_ES.md)
+
+A **private, local, and modern** financial dashboard designed to give you total control over your net worth, savings, and investments. Your data is yours and lives exclusively on your machine.
 
 ![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
 
 ---
 
-## 🚀 Guía de Inicio
+## 🚀 Quick Start
 
-### 1. Instalación
+### 1. Installation
 ```bash
-# 1. Clona el repositorio
-git clone https://github.com/tu-usuario/finanzas-personales.git
-cd finanzas-personales
+# 1. Clone the repository
+git clone https://github.com/your-username/personal-finance.git
+cd personal-finance
 
-# 2. Crea un entorno virtual e instala dependencias
+# 2. Create virtual environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Prepara tus datos (Ver sección Estructura CSV abajo)
-# Crea la carpeta data/ y tus archivos CSV base.
+# 3. Prepare your data (See CSV Structure below)
+# Create the data/ folder and your base CSV files.
 
-# 4. Arranca la aplicación
+# 4. Start the application
 ./run.sh
 ```
-Abre tu navegador en `http://localhost:8501`.
+Open your browser at `http://localhost:8501`.
 
 ---
 
-## 📐 Estructura de Archivos CSV (Configuración)
+## 📐 CSV File Structure (Configuration)
 
-Al empezar, crea estos archivos en la carpeta `/data`. Asegúrate de respetar los **encabezados exactos**.
+To start, create these files in the `/data` folder. Ensure you respect the **exact headers**.
 
-### 1. Configuración de Patrimonio
-**`data/activos.csv`** (Tu catálogo de productos)
-| Columna | Descripción | Ejemplo |
+### 1. Wealth Configuration
+**`data/activos.csv`** (Your product catalog)
+| Column | Description | Example |
 | :--- | :--- | :--- |
-| `id` | Identificador único (Clave para todo). | `SP500_ETF` |
-| `nombre` | Nombre legible. | `Vanguard S&P 500 UCITS ETF` |
-| `isin` | ISIN (fondos) o 'CASH' (dinero). | `IE00B3XXRP09` |
+| `id` | Unique ID (Key for everything). | `SP500_ETF` |
+| `nombre` | Readable name. | `Vanguard S&P 500 UCITS ETF` |
+| `isin` | ISIN (funds) or 'CASH' (money). | `IE00B3XXRP09` |
 | `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
-| `fuente` | `quefondos` (automático) o `manual`. | `quefondos` |
+| `fuente` | `quefondos` (auto) or `manual`. | `quefondos` |
 
-**`data/saldo_inicial.csv`** (Tu punto de partida)
-| Columna | Descripción | Ejemplo |
+**`data/saldo_inicial.csv`** (Your starting point)
+| Column | Description | Example |
 | :--- | :--- | :--- |
-| `id_activo` | Debe coincidir con el `id` de activos.csv. | `BBVA_CASH` |
-| `participaciones` | Cantidad de títulos o dinero total. | `2500.50` |
-| `precio_medio_compra` | Coste medio histórico (pon `1` para efectivo). | `1` |
+| `id_activo` | Must match `id` in activos.csv. | `BBVA_CASH` |
+| `participaciones` | Total quantity or money amount. | `2500.50` |
+| `precio_medio_compra` | Historical average cost (use `1` for cash). | `1` |
 
-**`data/aportaciones.csv`** (Tus movimientos de inversión)
-| Columna | Descripción | Ejemplo |
+**`data/aportaciones.csv`** (Your investment movements)
+| Column | Description | Example |
 | :--- | :--- | :--- |
-| `fecha` | Fecha del movimiento (YYYY-MM-DD). | `2026-02-15` |
-| `tipo` | `COMPRA`, `VENTA` o `AJUSTE_VALOR`. | `COMPRA` |
-| `id_activo` | ID del activo afectado. | `MSCI_WORLD` |
-| `cantidad_dinero` | Dinero total invertido/recibido. | `1000` |
-| `titulos` | Número de participaciones. | `10.5` |
-| `precio_titulo` | Precio por participación. | `95.23` |
+| `fecha` | Date (YYYY-MM-DD). | `2026-02-15` |
+| `tipo` | `COMPRA` (Buy), `VENTA` (Sell) or `AJUSTE_VALOR`. | `COMPRA` |
+| `id_activo` | ID of the asset. | `MSCI_WORLD` |
+| `cantidad_dinero` | Total money invested/received. | `1000` |
+| `titulos` | Number of shares. | `10.5` |
+| `precio_titulo` | Price per share. | `95.23` |
 
 ---
 
-### 2. Configuración de Ahorro (Flujo)
+### 2. Savings Configuration (Flow)
 **`data/ingresos.csv`**
-| Columna | Ejemplo |
+| Column | Example |
 | :--- | :--- |
 | `fecha` | `2026-01-30` |
 | `cantidad` | `2100.50` |
-| `concepto` | `Nómina Enero` |
-| `categoria` | `Salario` |
+| `concepto` | `January Salary` |
+| `categoria` | `Salary` |
 
-**`data/gastos_variables.csv`** (Gastos del día a día)
-| Columna | Descripción | Ejemplo |
+**`data/gastos_variables.csv`** (Day-to-day expenses)
+| Column | Description | Example |
 | :--- | :--- | :--- |
-| `fecha` | Fecha del gasto. | `2026-02-05` |
-| `cantidad` | Importe. | `55.20` |
-| `categoria` | Agrupador para gráficos. | `Supermercado` |
-| `concepto` | Detalle. | `Mercadona` |
-| `extraordinario` | `NO` (habitual) o `SÍ` (imprevisto/anual). | `NO` |
+| `fecha` | Date. | `2026-02-05` |
+| `cantidad` | Amount. | `55.20` |
+| `categoria` | Grouping for charts. | `Groceries` |
+| `concepto` | Detail. | `Walmart` |
+| `extraordinario` | `NO` (regular) or `SÍ` (unexpected/annual). | `NO` |
 
-**`data/gastos_recurrentes.csv`** (Fijos mensuales automáticos)
-| Columna | Descripción | Ejemplo |
+**`data/gastos_recurrentes.csv`** (Automatic monthly fixed costs)
+| Column | Description | Example |
 | :--- | :--- | :--- |
-| `dia` | Día del mes que se cobra. | `5` |
-| `cantidad` | Importe fijo. | `12.99` |
-| `categoria` | Categoría. | `Suscripciones` |
-| `concepto` | Nombre. | `Netflix` |
+| `dia` | Day of the month charged. | `5` |
+| `cantidad` | Fixed amount. | `12.99` |
+| `categoria` | Category. | `Subscriptions` |
+| `concepto` | Name. | `Netflix` |
 
 ---
 
-## 📂 Archivos Automáticos (No tocar)
-El sistema generará o sobrescribirá estos archivos por su cuenta:
-*   `data/cartera.csv`: El resultado calculado de tu patrimonio actual.
-*   `data/precios_historicos.csv`: Historial de precios descargados de internet.
+## 📂 Auto-Generated Files (Do Not Edit)
+The system will generate or overwrite these files:
+*   `data/cartera.csv`: Calculated current portfolio state.
+*   `data/precios_historicos.csv`: History of prices downloaded from the web.
 
 ---
 
-## ✅ Características Clave
-*   **Privacidad Total:** Funciona 100% offline. Ningún dato sale de tu máquina.
-*   **Seguimiento Automático:** Actualización de precios de fondos vía internet (opcional).
-*   **Análisis de Salud:** Cálculo de "Runway" (meses de libertad) y Tasa de Ahorro basado en gastos reales.
-*   **Escenarios:** Proyecciones a futuro (Pesimista/Realista/Optimista) para ayudarte a planificar.
+## ✅ Key Features
+*   **Total Privacy:** Works 100% offline. No data leaves your machine.
+*   **Auto Tracking:** Fund price updates via web scraping (optional).
+*   **Health Analysis:** "Runway" calculation (freedom months) and Savings Rate based on real expenses.
+*   **Scenarios:** Future projections (Pessimistic/Realistic/Optimistic) to help you plan.
 
 ---
 
-## 🧠 Herramientas Inteligentes
+## 🧠 Intelligent Tools
 
-Este programa incluye varias funcionalidades avanzadas para automatizar y mejorar la gestión financiera:
-
-*   **Motor de Reconstrucción de Cartera:** Olvida mantener la cartera a mano. El sistema reconstruye tu posición actual procesando cronológicamente cada compra, venta y ajuste desde el saldo inicial.
-*   **Actualizador de Precios Automático:** Scraper integrado que consulta fuentes financieras (QueFondos) para obtener el valor liquidativo de tus fondos mediante el ISIN.
-*   **Gestor de Gastos Recurrentes:** Calcula automáticamente tus gastos fijos (Netflix, alquiler, seguros) proyectándolos en el tiempo para que el flujo de caja sea siempre realista.
-*   **Prorrateo Inteligente de Gastos Extraordinarios:** No dejes que un seguro anual arruine tus gráficos de un mes. El sistema detecta gastos extraordinarios y los prorratea para mostrarte tu capacidad de ahorro real.
-*   **Proyecciones Multiescenario:** Algoritmo de previsión que combina tu flujo de caja neto con el rendimiento esperado de tus inversiones para proyectar tu patrimonio a 6 meses y a cierre de año.
-*   **Visualización Avanzada con ECharts:** Gráficos dinámicos tipo *Sunburst* para ver la jerarquía de tu patrimonio y gráficos de área para distinguir el capital invertido de la plusvalía real.
+*   **Automated Portfolio Reconstruction**: Rebuilds your entire financial state from raw transaction history.
+*   **Auto-Market Data**: Integrated scraper fetches latest fund NAVs via ISIN.
+*   **Smart Recurring Expenses**: Automatically projects fixed costs for accurate cash flow without manual entry.
+*   **Expense Prorating**: Smooths out annual spikes (like insurance) to reveal your true monthly savings rate.
+*   **Multi-Scenario Forecasting**: Projects 6-month and EOY net worth using 3 adjustable growth models.
+*   **Advanced Visualization**: Interactive Sunburst and Area charts for deep portfolio insights.
