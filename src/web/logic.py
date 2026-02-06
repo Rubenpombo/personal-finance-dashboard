@@ -59,10 +59,18 @@ def rebuild_portfolio():
                             new_avg = (total_cost_old + total_cost_new) / new_shares
                             current['participaciones'] = new_shares
                             current['precio_medio_compra'] = new_avg
+                        
+                        # Descontar de CASH_DIG (dinero en cuenta 1)
+                        if 'CASH_DIG' in portfolio:
+                            portfolio['CASH_DIG']['participaciones'] -= cantidad_op
                             
                     elif tipo == 'VENTA':
                         current['participaciones'] = max(0.0, current['participaciones'] - titulos_op)
                         # Average price usually doesn't change on sell (FIFO/Weighted implies cost basis per share stays)
+                        
+                        # Sumar a CASH_DIG (dinero en cuenta 1)
+                        if 'CASH_DIG' in portfolio:
+                            portfolio['CASH_DIG']['participaciones'] += cantidad_op
                         
                     elif tipo == 'AJUSTE_VALOR':
                         # For Cash or manual overrides. 'titulos' or 'cantidad_dinero' acts as the new balance.

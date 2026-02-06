@@ -102,3 +102,16 @@ El sistema generará o sobrescribirá estos archivos por su cuenta:
 *   **Seguimiento Automático:** Actualización de precios de fondos vía internet (opcional).
 *   **Análisis de Salud:** Cálculo de "Runway" (meses de libertad) y Tasa de Ahorro basado en gastos reales.
 *   **Escenarios:** Proyecciones a futuro (Pesimista/Realista/Optimista) para ayudarte a planificar.
+
+---
+
+## 🧠 Herramientas Inteligentes
+
+Este programa incluye varias funcionalidades avanzadas para automatizar y mejorar la gestión financiera:
+
+*   **Motor de Reconstrucción de Cartera:** Olvida mantener la cartera a mano. El sistema reconstruye tu posición actual procesando cronológicamente cada compra, venta y ajuste desde el saldo inicial.
+*   **Actualizador de Precios Automático:** Scraper integrado que consulta fuentes financieras (QueFondos) para obtener el valor liquidativo de tus fondos mediante el ISIN.
+*   **Gestor de Gastos Recurrentes:** Calcula automáticamente tus gastos fijos (Netflix, alquiler, seguros) proyectándolos en el tiempo para que el flujo de caja sea siempre realista.
+*   **Prorrateo Inteligente de Gastos Extraordinarios:** No dejes que un seguro anual arruine tus gráficos de un mes. El sistema detecta gastos extraordinarios y los prorratea para mostrarte tu capacidad de ahorro real.
+*   **Proyecciones Multiescenario:** Algoritmo de previsión que combina tu flujo de caja neto con el rendimiento esperado de tus inversiones para proyectar tu patrimonio a 6 meses y a cierre de año.
+*   **Visualización Avanzada con ECharts:** Gráficos dinámicos tipo *Sunburst* para ver la jerarquía de tu patrimonio y gráficos de área para distinguir el capital invertido de la plusvalía real.
