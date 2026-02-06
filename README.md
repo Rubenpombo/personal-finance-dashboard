@@ -1,6 +1,6 @@
 # Personal Wealth Management System (Personal Finance)
 
-[🇪🇸 Versión en Español](README_ES.md)
+[README_ES](README_ES.md)
 
 A **private, local, and modern** financial dashboard designed to give you total control over your net worth, savings, and investments. Your data is yours and lives exclusively on your machine.
 
