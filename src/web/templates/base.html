@@ -6,82 +6,107 @@
     <title>Gestión Patrimonial</title>
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border-radius: 8px; }
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        /* Custom Fixed Sidebar */
-        .sidebar { 
-            position: fixed; 
-            top: 0; 
-            bottom: 0; 
-            left: 0; 
-            z-index: 100; 
-            padding: 0;
-            width: 200px; 
-            background-color: #343a40; 
-            color: white; 
-            display: flex;
-            flex-direction: column;
+        /* Sidebar Styles */
+        #sidebar {
+            min-width: 240px;
+            max-width: 240px;
+            min-height: 100vh;
+            background: #1e293b;
+            color: #fff;
             transition: all 0.3s;
+            position: fixed;
+            z-index: 1000;
         }
-        
-        /* Main Content wrapper */
-        .main-content {
-            margin-left: 200px; 
+
+        #sidebar.active {
+            margin-left: -240px;
+        }
+
+        .sidebar-header {
             padding: 20px;
-            width: calc(100% - 200px);
+            background: #0f172a;
         }
 
-        .sidebar-header { padding: 20px; background-color: #212529; }
-        
-        /* Nav fills remaining height */
-        .sidebar nav {
-            flex-grow: 1;
+        #sidebar nav a {
+            padding: 15px 20px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
         }
 
-        /* Links share the height equally */
-        .sidebar a { 
-            flex: 1;
-            color: rgba(255,255,255,0.7); 
-            text-decoration: none; 
-            padding: 0 20px; 
-            display: flex;
-            align-items: center; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-            font-size: 0.95rem;
-            transition: background-color 0.2s, color 0.2s;
+        #sidebar nav a:hover, #sidebar nav a.active {
+            color: #fff;
+            background: #334155;
+            border-left: 4px solid #3b82f6;
         }
-        
-        .sidebar a:hover { background-color: rgba(255,255,255,0.1); color: white; }
-        
-        .metric-value { font-size: 1.6rem; font-weight: 700; color: #343a40; }
-        .metric-label { font-size: 0.8rem; color: #6c757d; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-        
-        .forecast-box { background-color: #e9ecef; padding: 15px; border-radius: 6px; }
-        .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: #495057; border-left: 4px solid #0d6efd; padding-left: 10px; }
+
+        /* Content Styles */
+        #content {
+            width: 100%;
+            padding: 20px 40px;
+            min-height: 100vh;
+            transition: all 0.3s;
+            margin-left: 240px;
+        }
+
+        #content.active {
+            margin-left: 0;
+        }
+
+        .toggle-btn {
+            background: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            #sidebar { margin-left: -240px; }
+            #sidebar.active { margin-left: 0; }
+            #content { margin-left: 0; }
+            #content.active { margin-left: 240px; }
+        }
     </style>
   </head>
   <body>
-    <div class="container-fluid p-0">
+    <div class="d-flex">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <nav id="sidebar">
             <div class="sidebar-header">
-                <h6 class="m-0 text-uppercase fw-bold ls-1 text-center">Finanzas</h6>
+                <h5 class="m-0 fw-bold text-center" style="letter-spacing: 2px;">FINANZAS</h5>
             </div>
-            <nav>
-                <a href="/">📊 Panel Principal</a>
-                <a href="/detail">🔍 Al Detalle</a>
-                <a href="/data">💾 Datos CSV</a>
+            <nav class="mt-4">
+                <a href="/" class="{{ 'active' if request.path == '/' else '' }}">📊 Dashboard</a>
+                <a href="/detail" class="{{ 'active' if request.path == '/detail' else '' }}">💸 Detalle Gastos</a>
+                <a href="/data" class="{{ 'active' if request.path == '/data' else '' }}">💾 Datos CSV</a>
             </nav>
-        </div>
+        </nav>
 
         <!-- Main Content -->
-        <div class="main-content">
+        <div id="content">
+            <button type="button" id="sidebarCollapse" class="toggle-btn">
+                <span class="fw-bold">☰</span>
+            </button>
             {% block content %}{% endblock %}
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        document.getElementById('sidebarCollapse').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('content').classList.toggle('active');
+        });
+    </script>
+  </body>
+</html>
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
   </body>
 </html>
