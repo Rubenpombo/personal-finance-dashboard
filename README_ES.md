@@ -45,18 +45,11 @@ Al empezar, crea estos archivos en la carpeta `/data`. Asegúrate de respetar lo
 | `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
 | `fuente` | `quefondos` (automático) o `manual`. | `quefondos` |
 
-**`data/saldo_inicial.csv`** (Tu punto de partida)
-| Columna | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `id_activo` | Debe coincidir con el `id` de activos.csv. | `BBVA_CASH` |
-| `participaciones` | Cantidad de títulos o dinero total. | `2500.50` |
-| `precio_medio_compra` | Coste medio histórico (pon `1` para efectivo). | `1` |
-
 **`data/aportaciones.csv`** (Tus movimientos de inversión)
 | Columna | Descripción | Ejemplo |
 | :--- | :--- | :--- |
 | `fecha` | Fecha del movimiento (YYYY-MM-DD). | `2026-02-15` |
-| `tipo` | `COMPRA`, `VENTA` o `AJUSTE_VALOR`. | `COMPRA` |
+| `tipo` | `INICIAL`, `COMPRA`, `VENTA` o `AJUSTE_VALOR`. | `COMPRA` |
 | `id_activo` | ID del activo afectado. | `MSCI_WORLD` |
 | `cantidad_dinero` | Dinero total invertido/recibido. | `1000` |
 | `titulos` | Número de participaciones. | `10.5` |
@@ -80,7 +73,6 @@ Al empezar, crea estos archivos en la carpeta `/data`. Asegúrate de respetar lo
 | `cantidad` | Importe. | `55.20` |
 | `categoria` | Agrupador para gráficos. | `Supermercado` |
 | `concepto` | Detalle. | `Mercadona` |
-| `extraordinario` | `NO` (habitual) o `SÍ` (imprevisto/anual). | `NO` |
 
 **`data/gastos_recurrentes.csv`** (Fijos mensuales automáticos)
 | Columna | Descripción | Ejemplo |

@@ -12,7 +12,6 @@ def check_integrity():
     
     activos_path = os.path.join(data_dir, "activos.csv")
     aportaciones_path = os.path.join(data_dir, "aportaciones.csv")
-    saldo_path = os.path.join(data_dir, "saldo_inicial.csv")
     
     if not os.path.exists(activos_path):
         print(f"ERROR CRÍTICO: No se encuentra {activos_path}")
@@ -43,23 +42,6 @@ def check_integrity():
                 print("✅ Aportaciones: Archivo vacío (sin operaciones).")
         except Exception as e:
             print(f"⚠️ Error leyendo aportaciones.csv: {e}")
-
-    # Check Saldo Inicial
-    if os.path.exists(saldo_path):
-        try:
-            df_saldo = pd.read_csv(saldo_path)
-            if not df_saldo.empty:
-                saldo_ids = set(df_saldo['id_activo'].astype(str).str.strip().unique())
-                diff = saldo_ids - valid_ids
-                if diff:
-                    print(f"❌ ERROR: IDs en 'saldo_inicial.csv' no definidos en 'activos.csv': {diff}")
-                    errors_found = True
-                else:
-                    print("✅ Saldo Inicial: Todos los IDs son válidos.")
-            else:
-                print("✅ Saldo Inicial: Sin datos.")
-        except Exception as e:
-            print(f"⚠️ Error leyendo saldo_inicial.csv: {e}")
 
     if not errors_found:
         print("--- Integridad correcta ---\n")

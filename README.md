@@ -45,18 +45,11 @@ To start, create these files in the `/data` folder. Ensure you respect the **exa
 | `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
 | `fuente` | `quefondos` (auto) or `manual`. | `quefondos` |
 
-**`data/saldo_inicial.csv`** (Your starting point)
-| Column | Description | Example |
-| :--- | :--- | :--- |
-| `id_activo` | Must match `id` in activos.csv. | `BBVA_CASH` |
-| `participaciones` | Total quantity or money amount. | `2500.50` |
-| `precio_medio_compra` | Historical average cost (use `1` for cash). | `1` |
-
 **`data/aportaciones.csv`** (Your investment movements)
 | Column | Description | Example |
 | :--- | :--- | :--- |
 | `fecha` | Date (YYYY-MM-DD). | `2026-02-15` |
-| `tipo` | `COMPRA` (Buy), `VENTA` (Sell) or `AJUSTE_VALOR`. | `COMPRA` |
+| `tipo` | `INICIAL`, `COMPRA` (Buy), `VENTA` (Sell) or `AJUSTE_VALOR`. | `COMPRA` |
 | `id_activo` | ID of the asset. | `MSCI_WORLD` |
 | `cantidad_dinero` | Total money invested/received. | `1000` |
 | `titulos` | Number of shares. | `10.5` |
@@ -80,7 +73,6 @@ To start, create these files in the `/data` folder. Ensure you respect the **exa
 | `cantidad` | Amount. | `55.20` |
 | `categoria` | Grouping for charts. | `Groceries` |
 | `concepto` | Detail. | `Walmart` |
-| `extraordinario` | `NO` (regular) or `SÍ` (unexpected/annual). | `NO` |
 
 **`data/gastos_recurrentes.csv`** (Automatic monthly fixed costs)
 | Column | Description | Example |
