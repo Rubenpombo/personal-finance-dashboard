@@ -1,311 +1,423 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Header & Actions -->
-<div class="d-flex justify-content-between align-items-center mb-5 fade-in">
+<!-- Header & Global Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4 fade-in">
     <div>
-        <h2 class="fw-bold text-dark mb-1" style="font-family: 'Inter', sans-serif;">Resumen Financiero</h2>
-        <p class="text-muted mb-0">Visión global de tu patrimonio y flujo de caja.</p>
+        <h2 class="fw-bold text-dark mb-1">Dashboard Financiero</h2>
+        <p class="text-muted mb-0">Gestión patrimonial y flujo de caja personal.</p>
     </div>
     <form action="/update-prices" method="post" onsubmit="return showLoading(this);">
         <button type="submit" class="btn btn-dark shadow-sm d-flex align-items-center gap-2 px-3 py-2" id="updateBtn" style="border-radius: 10px;">
-            <span class="normal-text font-monospace small">ACTUALIZAR MERCADO</span>
+            <span class="normal-text font-monospace small">ACTUALIZAR PRECIOS</span>
             <span class="loading-text small" style="display:none;">ACTUALIZANDO...</span>
         </button>
     </form>
 </div>
 
-<!-- Flash Messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="mb-4">
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
+<!-- Main Tabs Navigation -->
+<ul class="nav nav-pills mb-4 fade-in" id="pills-tab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-bold px-4 py-2" id="pills-summary-tab" data-bs-toggle="pill" data-bs-target="#pills-summary" type="button" role="tab">📊 Resumen</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="pills-investments-tab" data-bs-toggle="pill" data-bs-target="#pills-investments" type="button" role="tab">📈 Inversiones</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-bold px-4 py-2" id="pills-cashflow-tab" data-bs-toggle="pill" data-bs-target="#pills-cashflow" type="button" role="tab">💸 Flujo de Caja</button>
+    </li>
+</ul>
 
-<!-- KPI Cards Level 1 (Primary) -->
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100 kpi-card" style="background: linear-gradient(145deg, #ffffff, #f8f9fa);">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Patrimonio Neto</div>
-                <div class="display-6 fw-bold text-dark">{{ "{:,.2f}".format(portfolio.total_patrimonio) }} €</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Rentabilidad</div>
-                <div class="display-6 fw-bold" style="color: {{ '#10b981' if portfolio.rentabilidad_total >= 0 else '#ef4444' }}">
-                    {{ "{:,.2f}".format(portfolio.rentabilidad_total) }} %
+<div class="tab-content fade-in" id="pills-tabContent">
+    
+    <!-- TAB 1: SUMMARY -->
+    <div class="tab-pane fade show active" id="pills-summary" role="tabpanel">
+        <!-- KPI Cards -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Patrimonio Neto</div>
+                    <div class="fs-2 fw-bold text-dark">{{ "{:,.2f}".format(portfolio.total_patrimonio) }} €</div>
                 </div>
-                <small class="text-muted">Retorno total acumulado</small>
             </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Riesgo</div>
-                <div class="display-6 fw-bold text-secondary">{{ "{:,.1f}".format(portfolio.pct_riesgo) }} %</div>
-                <small class="text-muted">Exposición a renta variable</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- KPI Cards Level 2 (Secondary/Health) -->
-<div class="row g-4 mb-5">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Liquidez</div>
-                <div class="display-6 fw-bold text-info" style="font-size: 1.8rem;">{{ "{:,.2f}".format(portfolio.liquidez) }} €</div>
-                <small class="text-muted">Cash instantáneo</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Ahorro Mensual</div>
-                <div class="display-6 fw-bold text-primary" style="font-size: 1.8rem;">{{ "{:,.0f}".format(forecast.net_flow) }} €</div>
-                <small class="text-muted">Promedio neto (6m)</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Runway</div>
-                <div class="display-6 fw-bold text-info" style="font-size: 1.8rem;">{{ "{:,.1f}".format(portfolio.runway_months) }}</div>
-                <small class="text-muted">Meses de libertad</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 kpi-card">
-            <div class="card-body p-4">
-                <div class="text-uppercase text-muted fw-bold small mb-2" style="letter-spacing: 1px;">Tasa Ahorro</div>
-                <div class="display-6 fw-bold text-success" style="font-size: 1.8rem;">{{ "{:,.1f}".format(portfolio.savings_rate) }} %</div>
-                <small class="text-muted">Eficiencia de retención</small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- History & Forecast Row -->
-<div class="row g-4 mb-5">
-    <!-- Portfolio History Chart (NEW) -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0 text-primary">Evolución Valor Cartera</h5>
-            </div>
-            <div class="card-body p-0">
-                <div id="chart-history" style="width: 100%; height: 350px;"></div>
-                {% if not charts.history %}
-                <div class="text-center p-5 text-muted">
-                    <p class="mb-0">No hay historial disponible aún.</p>
-                    <small>Actualiza precios hoy para crear el primer punto.</small>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Capital Invertido</div>
+                    <div class="fs-2 fw-bold text-primary">{{ "{:,.2f}".format(portfolio.total_inversion) }} €</div>
                 </div>
-                {% endif %}
             </div>
-        </div>
-    </div>
-
-    <!-- Scenarios Section (Sidebar style) -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px; overflow: hidden;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0">🔮 Escenarios</h5>
-                <ul class="nav nav-pills mt-3" id="scenarioTabs" role="tablist">
-                    <li class="nav-item me-2" role="presentation">
-                        <button class="nav-link active py-1 px-3 small fw-bold" id="six-months-tab" data-bs-toggle="pill" data-bs-target="#six-months" type="button">6M</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link py-1 px-3 small fw-bold" id="eoy-tab" data-bs-toggle="pill" data-bs-target="#eoy" type="button">FIN DE AÑO</button>
-                    </li>
-                </ul>
-            </div>
-            <div class="card-body bg-light p-4 pt-0">
-                <div class="tab-content" id="scenarioTabsContent">
-                    <!-- 6M -->
-                    <div class="tab-pane fade show active" id="six-months">
-                        <div class="d-flex flex-column gap-3">
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-success shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Optimista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.optimistic) }} €</span>
-                            </div>
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-secondary shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Realista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.realistic) }} €</span>
-                            </div>
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-danger shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Pesimista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_6m.pessimistic) }} €</span>
-                            </div>
-                        </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Plusvalía Total</div>
+                    <div class="fs-2 fw-bold" style="color: {{ '#10b981' if portfolio.beneficio_total_abs >= 0 else '#ef4444' }}">
+                        {{ "{:,.2f}".format(portfolio.beneficio_total_abs) }} €
                     </div>
-                    <!-- EOY -->
-                    <div class="tab-pane fade" id="eoy">
-                        <div class="d-flex flex-column gap-3">
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-success shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Optimista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.optimistic) }} €</span>
-                            </div>
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-secondary shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Realista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.realistic) }} €</span>
-                            </div>
-                            <div class="p-3 bg-white rounded-3 border-start border-4 border-danger shadow-sm">
-                                <span class="d-block text-muted text-uppercase small fw-bold">Pesimista</span>
-                                <span class="fs-4 fw-bold text-dark">{{ "{:,.0f}".format(forecast.scenarios_eoy.pessimistic) }} €</span>
-                            </div>
-                        </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Rentabilidad</div>
+                    <div class="fs-2 fw-bold" style="color: {{ '#10b981' if portfolio.rentabilidad_total >= 0 else '#ef4444' }}">
+                        {{ "{:,.2f}".format(portfolio.rentabilidad_total) }} %
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h5 class="fw-bold m-0">Evolución Patrimonio</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="chart-history" style="width: 100%; height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h5 class="fw-bold m-0">📥 Últimas Aportaciones</h5>
+                    </div>
+                    <div class="card-body p-4 pt-0">
+                        <table class="table table-hover table-sm">
+                            <tbody class="small">
+                                {% for month in monthly_investments %}
+                                <tr>
+                                    <td class="fw-semibold">{{ month.periodo }}</td>
+                                    <td class="text-end fw-bold">{{ "{:,.2f}".format(month.cantidad_dinero) }} €</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Portfolio Allocation (Full Width) -->
-<div class="row mb-5">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0">Distribución de Cartera</h5>
+    <!-- TAB 2: INVESTMENTS -->
+    <div class="tab-pane fade" id="pills-investments" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h5 class="fw-bold m-0 text-center">Distribución de Activos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chart-allocation" style="width: 100%; height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h5 class="fw-bold m-0 text-center">Rendimiento por Activo</h5>
+                    </div>
+                    <div class="card-body p-0 pe-3">
+                        <div id="chart-performance" style="width: 100%; height: 500px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: CASHFLOW -->
+    <div class="tab-pane fade" id="pills-cashflow" role="tabpanel">
+        
+        <!-- KPIs Cashflow -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Ingreso Medio</div>
+                    <div class="fs-3 fw-bold text-success">{{ "{:,.2f}".format(forecast.avg_income) }} €</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Gasto Medio</div>
+                    <div class="fs-3 fw-bold text-danger">{{ "{:,.2f}".format(forecast.weighted_avg_expense) }} €</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Tasa Ahorro</div>
+                    <div class="fs-3 fw-bold text-primary">{{ "{:,.2f}".format(portfolio.savings_rate) }} %</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
+                    <div class="text-uppercase text-muted fw-bold small mb-2">Runway</div>
+                    <div class="fs-3 fw-bold text-info">{{ "{:,.2f}".format(portfolio.runway_months) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Selector & Sankey / Detail Charts -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-12">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <select class="form-select w-auto shadow-sm fw-bold border-0 bg-light" id="period-selector" style="border-radius: 8px;">
+                                {% for p in available_periods %}
+                                <option value="{{ p }}" {{ 'selected' if p == monthly_detail.raw_periodo else '' }}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="text-muted small fw-bold text-uppercase" id="current-month-display">{{ monthly_detail.periodo }}</span>
+                        </div>
+                        
+                        <div class="btn-group shadow-sm" role="group" id="window-selector">
+                            <input type="radio" class="btn-check" name="btnwindow" id="w1" value="1" checked>
+                            <label class="btn btn-outline-dark px-3" for="w1">1M</label>
+                            
+                            <input type="radio" class="btn-check" name="btnwindow" id="w3" value="3">
+                            <label class="btn btn-outline-dark px-3" for="w3">3M</label>
+                            
+                            <input type="radio" class="btn-check" name="btnwindow" id="w6" value="6">
+                            <label class="btn btn-outline-dark px-3" for="w6">6M</label>
+                            
+                            <input type="radio" class="btn-check" name="btnwindow" id="w12" value="12">
+                            <label class="btn btn-outline-dark px-3" for="w12">12M</label>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Sankey Diagram -->
+                        <div class="mb-5">
+                            <div id="chart-sankey" style="width: 100%; height: 500px;"></div>
+                        </div>
+                        
+                        <div class="row border-top pt-4">
+                            <div class="col-md-6">
+                                <h6 class="text-center text-success fw-bold mb-3">Distribución Ingresos</h6>
+                                <div id="chart-monthly-ing" style="width: 100%; height: 350px;"></div>
+                                <div class="text-center mt-2 fw-bold text-success fs-5" id="total-ing-display">{{ "{:,.2f}".format(monthly_detail.total_ing) }} €</div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-center text-danger fw-bold mb-3">Distribución Gastos</h6>
+                                <div id="chart-monthly-gas" style="width: 100%; height: 350px;"></div>
+                                <div class="text-center mt-2 fw-bold text-danger fs-5" id="total-gas-display">{{ "{:,.2f}".format(monthly_detail.total_gas) }} €</div>
+                            </div>
+                        </div>
+
+                        <!-- Drill-down Table (Hidden by default) -->
+                        <div id="drilldown-container" class="mt-4 p-4 bg-light rounded-4 d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold m-0" id="drilldown-title">Detalle de Categoría</h6>
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="hideDrilldown()">CERRAR</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead class="text-muted small">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Concepto</th>
+                                            <th class="text-end">Cantidad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drilldown-body" class="small">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historical Cashflow Evolution -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-white p-4 border-0">
+                        <h5 class="fw-bold m-0">Evolución Cashflow Histórica</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="chart-cashflow" style="width: 100%; height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecast / Scenarios -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white p-4 border-0">
+                <h5 class="fw-bold m-0">Previsión Patrimonio (Estimación a {{ forecast.months_6 }} meses)</h5>
             </div>
             <div class="card-body">
-                <!-- Increased height to 500px for better visibility of IDs -->
-                <div id="chart-allocation" style="width: 100%; height: 500px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Performance (Full Width) -->
-<div class="row mb-5">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0">Rendimiento por Activo</h5>
-            </div>
-            <div class="card-body p-0 pe-3">
-                <div id="chart-performance" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Time Series Charts -->
-<div class="row g-4 mb-5">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0 text-success">Evolución Ingresos</h5>
-            </div>
-            <div class="card-body p-0">
-                <div id="chart-ingresos" style="width: 100%; height: 300px;"></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 16px;">
-            <div class="card-header bg-white p-4 border-bottom-0">
-                <h5 class="fw-bold m-0 text-danger">Evolución Gastos</h5>
-            </div>
-            <div class="card-body p-0">
-                <div id="chart-gastos" style="width: 100%; height: 300px;"></div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border-start border-4 border-success bg-light shadow-sm">
+                            <span class="text-muted small fw-bold text-uppercase">Optimista (+10%)</span>
+                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.optimistic) }} €</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border-start border-4 border-primary bg-light shadow-sm">
+                            <span class="text-muted small fw-bold text-uppercase">Realista (+3.5%)</span>
+                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.realistic) }} €</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-4 border-start border-4 border-danger bg-light shadow-sm">
+                            <span class="text-muted small fw-bold text-uppercase">Pesimista (-10%)</span>
+                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.pessimistic) }} €</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/echarts.min.js') }}"></script>
-
 <script>
+    const charts = {};
+
     const initChart = (id, option) => {
-        if (!option) return;
-        const chart = echarts.init(document.getElementById(id));
+        const el = document.getElementById(id);
+        if (!option || !el) return null;
+        const chart = echarts.init(el);
         chart.setOption(option);
-        window.addEventListener('resize', () => chart.resize());
+        charts[id] = chart;
+        return chart;
     };
 
-    var dataIngresos = {{ charts.ingresos | tojson }};
-    var dataGastos = {{ charts.gastos | tojson }};
-    var dataAllocation = {{ charts.allocation | tojson }};
-    var dataPerformance = {{ charts.performance | tojson }};
+    // Responsive charts
+    window.addEventListener('resize', () => {
+        Object.values(charts).forEach(c => c && c.resize());
+    });
+
+    // Data from Jinja
+    var dataCashflow = {{ charts.cashflow | tojson if charts.cashflow else 'null' }};
+    var dataAllocation = {{ charts.allocation | tojson if charts.allocation else 'null' }};
+    var dataPerformance = {{ charts.performance | tojson if charts.performance else 'null' }};
     var dataHistory = {{ charts.history | tojson if charts.history else 'null' }};
+    var monthlyDetail = {{ monthly_detail | tojson }};
+    var sankeyDataInitial = {{ sankey_data | tojson if sankey_data else 'null' }};
 
-    if (dataAllocation && dataAllocation.series) {
-        var totalValue = 0;
-        if (dataAllocation.series.data) {
-            dataAllocation.series.data.forEach(function(item) {
-                 if(item.children) {
-                     item.children.forEach(function(child) {
-                         totalValue += child.value;
-                     });
-                 } else if (item.value) {
-                     totalValue += item.value;
-                 }
-            });
-        }
-
-        dataAllocation.tooltip = {
-            trigger: 'item',
-            formatter: function (params) {
-                var p = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(2) : 0;
-                return `${params.name}: ${params.value.toLocaleString()} € (${p}%)`;
-            }
+    function createSankeyOption(data) {
+        if (!data || !data.nodes || data.nodes.length === 0) return null;
+        return {
+            tooltip: { trigger: 'item', triggerOn: 'mousemove', formatter: '{b}: {c} €' },
+            series: [{
+                type: 'sankey',
+                layout: 'none',
+                top: '5%',
+                left: '2%',
+                right: '15%',
+                bottom: '5%',
+                nodeGap: 12,
+                data: data.nodes,
+                links: data.links,
+                emphasis: { focus: 'adjacency' },
+                lineStyle: { color: 'gradient', curveness: 0.5 },
+                label: { position: 'right', fontSize: 11, fontWeight: 'bold', color: '#334155' }
+            }]
         };
     }
 
-    if (dataPerformance && dataPerformance.series && dataPerformance.series.length > 0) {
-        dataPerformance.tooltip = {
-            trigger: 'item',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderColor: '#e5e7eb',
-            textStyle: { color: '#1f2937' },
-            formatter: function (params) {
-                const d = params.data;
-                const color = d.value >= 0 ? '#10b981' : '#ef4444';
-                return `
-                    <div style="font-family: Inter, sans-serif; min-width: 200px;">
-                        <div style="font-weight: 600; margin-bottom: 4px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px;">
-                            ${d.nombre_completo}
-                        </div>
-                        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
-                            <span style="color: #6b7280;">P/L:</span>
-                            <span style="font-weight: 600; color: ${color}">${d.value.toLocaleString()} €</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: #6b7280;">Rentabilidad:</span>
-                            <span style="font-weight: 600; color: ${color}">${d.rentabilidad}%</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; border-top: 1px dashed #e5e7eb; margin-top: 4px; padding-top: 4px;">
-                            <span style="color: #6b7280;">Valor Actual:</span>
-                            <span style="font-weight: 600;">${d.valor_mercado.toLocaleString()} €</span>
-                        </div>
-                    </div>
-                `;
-            }
+    function createPieOption(name, data, color) {
+        if (!data || data.length === 0) return null;
+        return {
+            tooltip: { trigger: 'item', formatter: '{b}: {c} € ({d}%)' },
+            series: [{
+                name: name,
+                type: 'pie',
+                radius: ['40%', '70%'],
+                avoidLabelOverlap: false,
+                itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+                label: { show: false },
+                emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold' } },
+                data: data,
+                color: color === 'success' ? ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0'] : ['#ef4444', '#f87171', '#fca5a5', '#fecaca']
+            }]
         };
     }
 
-    initChart('chart-ingresos', dataIngresos);
-    initChart('chart-gastos', dataGastos);
+    // Initialize All Charts
+    initChart('chart-history', dataHistory);
+    initChart('chart-cashflow', dataCashflow);
     initChart('chart-allocation', dataAllocation);
     initChart('chart-performance', dataPerformance);
-    initChart('chart-history', dataHistory);
+    
+    let sankeyChart = initChart('chart-sankey', createSankeyOption(sankeyDataInitial));
+    let ingChart = initChart('chart-monthly-ing', createPieOption('Ingresos', monthlyDetail.ingresos, 'success'));
+    let gasChart = initChart('chart-monthly-gas', createPieOption('Gastos', monthlyDetail.gastos, 'danger'));
+
+    // Drill-down Logic
+    if (gasChart) {
+        gasChart.on('click', function (params) {
+            showDrilldown(params.name);
+        });
+    }
+
+    function showDrilldown(category) {
+        const container = document.getElementById('drilldown-container');
+        const title = document.getElementById('drilldown-title');
+        const body = document.getElementById('drilldown-body');
+        
+        const filtered = (monthlyDetail.gastos_raw || []).filter(g => g.categoria.toUpperCase() === category.toUpperCase());
+        
+        if (filtered.length === 0) return;
+
+        title.innerText = `Detalle de Categoría: ${category.toUpperCase()}`;
+        body.innerHTML = filtered.map(g => `
+            <tr>
+                <td>${g.fecha_str}</td>
+                <td>${g.concepto}</td>
+                <td class="text-end fw-bold">${g.cantidad.toLocaleString('es-ES', {minimumFractionDigits: 2})} €</td>
+            </tr>
+        `).join('');
+        
+        container.classList.remove('d-none');
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideDrilldown() {
+        document.getElementById('drilldown-container').classList.add('d-none');
+    }
+
+    // Fix for charts initialized in hidden tabs
+    document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', () => {
+            Object.values(charts).forEach(c => c && c.resize());
+        });
+    });
+
+    // Update function for detail charts
+    async function updateDetailedCharts() {
+        const period = document.getElementById('period-selector').value;
+        const windowVal = document.querySelector('input[name="btnwindow"]:checked').value;
+        
+        const response = await fetch(`/api/monthly-detail/${period}?window=${windowVal}`);
+        const data = await response.json();
+        
+        // Update global state for drill-down
+        monthlyDetail = data.detail;
+        hideDrilldown();
+
+        document.getElementById('current-month-display').innerText = data.detail.periodo;
+        document.getElementById('total-ing-display').innerText = data.detail.total_ing.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        document.getElementById('total-gas-display').innerText = data.detail.total_gas.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+        
+        if (ingChart) ingChart.setOption(createPieOption('Ingresos', data.detail.ingresos, 'success'), true);
+        if (gasChart) gasChart.setOption(createPieOption('Gastos', data.detail.gastos, 'danger'), true);
+        if (sankeyChart) {
+            const opt = createSankeyOption(data.sankey);
+            if (opt) {
+                sankeyChart.setOption(opt, true);
+                setTimeout(() => sankeyChart.resize(), 100); // Small delay to ensure container width is ready
+            }
+        }
+    }
+
+    // Listeners for selectors
+    document.getElementById('period-selector').addEventListener('change', updateDetailedCharts);
+    document.querySelectorAll('input[name="btnwindow"]').forEach(el => {
+        el.addEventListener('change', updateDetailedCharts);
+    });
 
     function showLoading(form) {
         var btn = document.getElementById('updateBtn');
@@ -317,18 +429,10 @@
 </script>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-    
-    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1e293b; }
-    
-    .kpi-card { transition: transform 0.2s; border-radius: 16px; }
-    .kpi-card:hover { transform: translateY(-5px); }
-    
-    .fade-in { animation: fadeIn 0.5s ease-in; }
+    .nav-pills .nav-link { color: #64748b; background: #fff; margin-right: 10px; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .nav-pills .nav-link.active { background: #1e293b; color: #fff; border-color: #1e293b; }
+    .fade-in { animation: fadeIn 0.4s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .nav-pills .nav-link { color: #6c757d; background-color: transparent; transition: all 0.2s; }
-    .nav-pills .nav-link:hover { color: #212529; background-color: rgba(0,0,0,0.05); }
-    .nav-pills .nav-link.active { color: #fff; background-color: #212529; }
+    .card { border-radius: 16px; }
 </style>
 {% endblock %}
