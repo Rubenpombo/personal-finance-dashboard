@@ -78,7 +78,7 @@ Initialize your workspace by copying files from `/data_template` into a new `/da
 
 ### `ingresos.csv` (Income Log)
 | Column | Description | Example |
-| :--- | :--- | : :--- |
+| :--- | :--- | :--- |
 | `fecha` | Received date. | `2026-01-30` |
 | `cantidad` | Net amount. | `2500.00` |
 | `concepto` | Description. | `Payroll` |

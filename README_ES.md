@@ -78,7 +78,7 @@ Inicializa tu espacio de trabajo copiando los archivos de `/data_template` en un
 
 ### `ingresos.csv` (Registro de Ingresos)
 | Columna | Descripción | Ejemplo |
-| :--- | :--- | : :--- |
+| :--- | :--- | :--- |
 | `fecha` | Fecha de recepción. | `2026-01-30` |
 | `cantidad` | Importe neto. | `2500.00` |
 | `concepto` | Descripción. | `Nómina` |
