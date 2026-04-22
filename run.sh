@@ -1,15 +1,17 @@
 #!/bin/bash
 source .venv/bin/activate
 
-# Integrity Check
-echo "Ejecutando verificaciones de robustez..."
-python scripts/check_data_integrity.py
-echo "---------------------------"
+# Check integrity silently (result only)
+python3 scripts/check_data_integrity.py
 
 export FLASK_APP=src/web/app.py
-export FLASK_ENV=development
 export PYTHONPATH="${PYTHONPATH}:$(pwd)/src/web"
 
-# Seguridad: Escuchar solo en localhost (127.0.0.1)
-echo "Lanzando dashboard en http://localhost:8501..."
+# Professional output
+echo ""
+echo "🚀 Dashboard listo en: http://localhost:8501"
+echo "--------------------------------------------"
+
+# Run Flask with reduced noise but keep it in foreground
+# We remove 2>/dev/null so the process doesn't terminate immediately and we see errors
 flask run --host 127.0.0.1 --port 8501

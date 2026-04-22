@@ -1,17 +1,248 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Explorador de Datos</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Explorador de Datos</h2>
+</div>
+
+<!-- Operations Card (Import & Manual) -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-white p-0">
+        <ul class="nav nav-tabs border-bottom-0" id="operationTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold py-3 px-4" id="import-tab" data-bs-toggle="tab" data-bs-target="#import-panel" type="button" role="tab">
+                    🚀 Importar MyInvestor
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold py-3 px-4" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual-panel" type="button" role="tab">
+                    ➕ Aportación Manual
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold py-3 px-4" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-panel" type="button" role="tab">
+                    🔄 Traspaso
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="operationTabsContent">
+            <!-- Import Panel -->
+            <div class="tab-pane fade show active" id="import-panel" role="tabpanel">
+                <p class="text-muted small">Pega el asunto del correo de confirmación de MyInvestor para registrar la operación automáticamente.</p>
+                
+                {% if session.get('import_preview') %}
+                {% set preview = session.get('import_preview') %}
+                <div class="alert {{ 'alert-warning' if session.get('import_is_duplicate') else 'alert-info' }} border-0 shadow-sm mb-3 p-3">
+                    <h6 class="fw-bold mb-3 small">🔍 Vista Previa de la Operación</h6>
+                    <div class="table-responsive bg-white rounded p-2 mb-3">
+                        <table class="table table-sm m-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Activo</th>
+                                    <th class="text-end">Títulos</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ preview.fecha }}</td>
+                                    <td><span class="badge {{ 'bg-success' if preview.tipo == 'COMPRA' else 'bg-danger' }}">{{ preview.tipo }}</span></td>
+                                    <td><code class="text-primary">{{ preview.id_activo }}</code></td>
+                                    <td class="text-end">{{ preview.titulos }}</td>
+                                    <td class="text-end">{{ preview.precio_titulo }} €</td>
+                                    <td class="fw-bold text-end">{{ preview.cantidad_dinero }} €</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <form action="/import-myinvestor" method="POST">
+                            <input type="hidden" name="confirm" value="true">
+                            <input type="hidden" name="fecha" value="{{ preview.fecha }}">
+                            <input type="hidden" name="tipo" value="{{ preview.tipo }}">
+                            <input type="hidden" name="id_activo" value="{{ preview.id_activo }}">
+                            <input type="hidden" name="titulos" value="{{ preview.titulos }}">
+                            <input type="hidden" name="precio_titulo" value="{{ preview.precio_titulo }}">
+                            <input type="hidden" name="cantidad_dinero" value="{{ preview.cantidad_dinero }}">
+                            
+                            {% if session.get('import_is_duplicate') %}
+                            <input type="hidden" name="force" value="true">
+                            <button type="submit" class="btn btn-warning btn-sm fw-bold">Añadir de todas formas</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success btn-sm fw-bold">Confirmar y Guardar</button>
+                            {% endif %}
+                        </form>
+                        <a href="/cancel-import" class="btn btn-outline-secondary btn-sm">Descartar</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form action="/import-myinvestor" method="POST" class="row g-2">
+                    <div class="col-md-10">
+                        <input type="text" name="subject" class="form-control" placeholder="Pega el asunto aquí..." required>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">Analizar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Manual Panel -->
+            <div class="tab-pane fade" id="manual-panel" role="tabpanel">
+                <form action="/add-contribution" method="POST" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Fecha</label>
+                        <input type="date" name="fecha" class="form-control" required value="{{ now_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Tipo de Operación</label>
+                        <select name="tipo" class="form-select">
+                            <option value="COMPRA">COMPRA</option>
+                            <option value="VENTA">VENTA</option>
+                            <option value="INICIAL">INICIAL</option>
+                            <option value="AJUSTE_VALOR">AJUSTE VALOR</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold">Activo / Fondo / ETF</label>
+                        <select name="id_activo" class="form-select" required>
+                            <option value="" selected disabled>Selecciona un activo...</option>
+                            {% for asset in assets %}
+                            <option value="{{ asset.id }}">{{ asset.nombre }} ({{ asset.id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Títulos / Participaciones</label>
+                        <input type="number" step="0.000001" name="titulos" class="form-control" required placeholder="0.000000">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Precio Unitario (€)</label>
+                        <input type="number" step="0.000001" name="precio_titulo" class="form-control" required placeholder="0.00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Importe Total (€)</label>
+                        <input type="number" step="0.01" name="cantidad_dinero" class="form-control" required placeholder="0.00">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-dark w-100">Guardar Operación</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Transfer Panel -->
+            <div class="tab-pane fade" id="transfer-panel" role="tabpanel">
+                <form action="/add-transfer" method="POST" class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold">Fecha</label>
+                        <input type="date" name="fecha" class="form-control" required value="{{ now_date }}">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Fondo Origen (Venta)</label>
+                        <select name="id_origen" class="form-select" required>
+                            <option value="" selected disabled>Selecciona origen...</option>
+                            {% for asset in assets %}
+                            <option value="{{ asset.id }}">{{ asset.nombre }} ({{ asset.id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Fondo Destino (Compra)</label>
+                        <select name="id_destino" class="form-select" required>
+                            <option value="" selected disabled>Selecciona destino...</option>
+                            {% for asset in assets %}
+                            <option value="{{ asset.id }}">{{ asset.nombre }} ({{ asset.id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="small fw-bold mb-3">Datos Origen</h6>
+                            <div class="mb-2">
+                                <label class="form-label x-small">Participaciones Vendidas</label>
+                                <input type="number" step="0.000001" name="titulos_origen" class="form-control form-control-sm" required placeholder="0.000000">
+                            </div>
+                            <div>
+                                <label class="form-label x-small">Precio de Salida (€)</label>
+                                <input type="number" step="0.000001" name="precio_origen" class="form-control form-control-sm" required placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded-3">
+                            <h6 class="small fw-bold mb-3">Datos Destino</h6>
+                            <div class="mb-2">
+                                <label class="form-label x-small">Participaciones Compradas</label>
+                                <input type="number" step="0.000001" name="titulos_destino" class="form-control form-control-sm" required placeholder="0.000000">
+                            </div>
+                            <div>
+                                <label class="form-label x-small">Precio de Entrada (€)</label>
+                                <input type="number" step="0.000001" name="precio_destino" class="form-control form-control-sm" required placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <label class="form-label small fw-bold">Importe Neto (€)</label>
+                                <input type="number" step="0.01" name="cantidad_dinero" class="form-control" required placeholder="0.00">
+                                <p class="text-muted x-small mt-2 mb-0">El importe bruto que se mueve entre fondos.</p>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-3 fw-bold">Ejecutar Traspaso</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <input type="text" name="notas" class="form-control form-control-sm" placeholder="Notas adicionales (opcional)">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .x-small { font-size: 0.75rem; }
+    .nav-tabs .nav-link { color: #64748b; border: none; border-bottom: 3px solid transparent; }
+    .nav-tabs .nav-link.active { color: #2563eb; border: none; border-bottom: 3px solid #2563eb; background: transparent; }
+    .nav-tabs .nav-link:hover { border-bottom: 3px solid #e2e8f0; }
+</style>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 {% for name, html_table in tables.items() %}
     {% if html_table is not none %}
-    <div class="card mb-4">
+    <div class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-white fw-bold">{{ name }}</div>
-        <div class="card-body table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <div class="card-body table-responsive p-0" style="max-height: 400px; overflow-y: auto;">
             {{ html_table | safe }}
         </div>
     </div>
     {% endif %}
 {% endfor %}
+
+<style>
+    .table { margin-bottom: 0; font-size: 0.85rem; }
+    .table thead th { position: sticky; top: 0; background: #f8fafc; z-index: 10; border-bottom: 2px solid #e2e8f0; }
+</style>
 
 {% endblock %}

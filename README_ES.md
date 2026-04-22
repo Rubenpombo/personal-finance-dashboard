@@ -1,111 +1,120 @@
-# Sistema de Gestión Patrimonial (Finanzas Personales)
+# 💰 Gestión de Patrimonio Personal
+> **Ecosistema Financiero Privado, Local e Inteligente.**
 
-[README](README.md)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-black.svg?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
 
-Un dashboard financiero **privado, local y moderno** diseñado para tener control total sobre tu patrimonio, ahorro e inversiones. Tus datos son tuyos y viven exclusivamente en tu ordenador.
-
-![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
+Un motor financiero de nivel profesional para el seguimiento del patrimonio neto, el ahorro y las inversiones. Toda la lógica se ejecuta localmente; tus datos nunca abandonan tu infraestructura.
 
 ---
 
-## 🚀 Guía de Inicio
+## 🖼️ Funcionalidades Destacadas
 
-### 1. Instalación
+### 📊 Seguimiento Holístico del Patrimonio
+<img src="imgs/expenses.png" alt="Resumen Dashboard" width="900">
+
+Visibilidad en tiempo real del **Patrimonio Neto**, **Capital Invertido** y **Plusvalías**. El motor calcula tu **Runway Financiero** basándose en tu estilo de vida medio.
+
+### 📈 Distribución de Activos de Precisión
+<img src="imgs/Inversiones.png" alt="Distribución de Activos" width="900">
+
+Visualiza tu exposición al riesgo mediante gráficos Sunburst interactivos. El sistema monitoriza el rendimiento a nivel de activo individual y el ROI en tiempo real.
+
+### 💸 Inteligencia de Flujo de Caja y Ahorro
+<img src="imgs/flujo_caja.png" alt="Análisis de Flujo de Caja" width="900">
+
+Prorratea picos anuales para revelar tu **Tasa de Ahorro Mensual Real**. Utiliza modelos predictivos para proyectar tu patrimonio a 6 meses y fin de año.
+
+*Nota: Los datos mostrados en las capturas son artificiales.*
+
+---
+
+## 🚀 Despliegue
+
 ```bash
-# 1. Clona el repositorio
-git clone https://github.com/tu-usuario/finanzas-personales.git
-cd finanzas-personales
+git clone https://github.com/Rubenpombo/personal-finance.git
+cd personal-finance
 
-# 2. Crea un entorno virtual e instala dependencias
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Prepara tus datos (Ver sección Estructura CSV abajo)
-# Crea la carpeta data/ y tus archivos CSV base.
-
-# 4. Arranca la aplicación
 ./run.sh
 ```
-Abre tu navegador en `http://localhost:8501`.
+> **Punto de acceso predeterminado:** `http://localhost:8501`
 
 ---
 
-## 📐 Estructura de Archivos CSV (Configuración)
+## 📐 Arquitectura de Datos
+Inicializa tu espacio de trabajo copiando los archivos de `/data_template` en una nueva carpeta `/data`.
 
-Al empezar, crea estos archivos en la carpeta `/data`. Asegúrate de respetar los **encabezados exactos**.
+<details>
+<summary><b>📂 Configuración de Cartera (activos.csv, aportaciones.csv)</b></summary>
 
-### 1. Configuración de Patrimonio
-**`data/activos.csv`** (Tu catálogo de productos)
+### `activos.csv` (Catálogo de Activos)
+| Columna | Descripción | Valores Soportados / Ejemplo |
+| :--- | :--- | :--- |
+| `id` | Identificador único (Clave Primaria). | `SP500_VANGUARD` |
+| `nombre` | Nombre legible por humanos. | `Vanguard S&P 500 UCITS ETF` |
+| `isin` | ISIN del activo o 'CASH'. | `IE00B3XXRP09`, `CASH` |
+| `tipo` | Clase de activo para la lógica de asignación. | `Renta Variable`, `Renta Fija`, `Efectivo`, `Materias Primas` |
+| `fuente` | Fuente de valoración. | `quefondos` (Scraping automático), `manual` |
+| `precio_actual`| Último precio conocido (usado si es manual). | `115.42` |
+
+### `aportaciones.csv` (Transacciones)
 | Columna | Descripción | Ejemplo |
 | :--- | :--- | :--- |
-| `id` | Identificador único (Clave para todo). | `SP500_ETF` |
-| `nombre` | Nombre legible. | `Vanguard S&P 500 UCITS ETF` |
-| `isin` | ISIN (fondos) o 'CASH' (dinero). | `IE00B3XXRP09` |
-| `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
-| `fuente` | `quefondos` (automático) o `manual`. | `quefondos` |
+| `fecha` | Fecha de la operación (YYYY-MM-DD). | `2026-02-15` |
+| `tipo` | Naturaleza de la transacción. | `COMPRA`, `VENTA`, `INICIAL`, `AJUSTE_VALOR` |
+| `id_activo` | ID del activo objetivo (del catálogo). | `MSCI_WORLD` |
+| `cantidad_dinero` | Importe bruto movido. | `1000.00` |
+| `titulos` | Número de unidades/participaciones. | `10.5` |
+| `precio_titulo` | Precio de ejecución por unidad. | `95.23` |
+| `notas` | Metadatos opcionales. | `Plan de ahorro mensual` |
+</details>
 
-**`data/aportaciones.csv`** (Tus movimientos de inversión)
+<details>
+<summary><b>📂 Seguimiento de Flujo de Caja (ingresos.csv, gastos_variables.csv, gastos_recurrentes.csv)</b></summary>
+
+### `ingresos.csv` (Registro de Ingresos)
 | Columna | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `fecha` | Fecha del movimiento (YYYY-MM-DD). | `2026-02-15` |
-| `tipo` | `INICIAL`, `COMPRA`, `VENTA` o `AJUSTE_VALOR`. | `COMPRA` |
-| `id_activo` | ID del activo afectado. | `MSCI_WORLD` |
-| `cantidad_dinero` | Dinero total invertido/recibido. | `1000` |
-| `titulos` | Número de participaciones. | `10.5` |
-| `precio_titulo` | Precio por participación. | `95.23` |
+| :--- | :--- | : :--- |
+| `fecha` | Fecha de recepción. | `2026-01-30` |
+| `cantidad` | Importe neto. | `2500.00` |
+| `concepto` | Descripción. | `Nómina` |
+| `categoria` | Agrupación. | `Salario` |
 
----
-
-### 2. Configuración de Ahorro (Flujo)
-**`data/ingresos.csv`**
-| Columna | Ejemplo |
-| :--- | :--- |
-| `fecha` | `2026-01-30` |
-| `cantidad` | `2100.50` |
-| `concepto` | `Nómina Enero` |
-| `categoria` | `Salario` |
-
-**`data/gastos_variables.csv`** (Gastos del día a día)
+### `gastos_variables.csv` (Gastos Variables)
 | Columna | Descripción | Ejemplo |
 | :--- | :--- | :--- |
 | `fecha` | Fecha del gasto. | `2026-02-05` |
 | `cantidad` | Importe. | `55.20` |
-| `categoria` | Agrupador para gráficos. | `Supermercado` |
-| `concepto` | Detalle. | `Mercadona` |
+| `categoria` | Etiqueta de visualización. | `Alimentación` |
+| `concepto` | Detalle. | `Supermercado` |
 
-**`data/gastos_recurrentes.csv`** (Fijos mensuales automáticos)
+### `gastos_recurrentes.csv` (Compromisos Mensuales Fijos)
 | Columna | Descripción | Ejemplo |
 | :--- | :--- | :--- |
-| `dia` | Día del mes que se cobra. | `5` |
-| `cantidad` | Importe fijo. | `12.99` |
-| `categoria` | Categoría. | `Suscripciones` |
+| `dia` | Día del mes (1-31). | `5` |
+| `cantidad` | Importe mensual fijo. | `12.99` |
+| `categoria` | Etiqueta de proyección. | `Suscripciones` |
 | `concepto` | Nombre. | `Netflix` |
+</details>
 
 ---
 
-## 📂 Archivos Automáticos (No tocar)
-El sistema generará o sobrescribirá estos archivos por su cuenta:
-*   `data/cartera.csv`: El resultado calculado de tu patrimonio actual.
-*   `data/precios_historicos.csv`: Historial de precios descargados de internet.
+## 📂 Artefactos del Sistema
+*   `data/cartera.csv`: Estado calculado actual (Instantánea).
+*   `data/latest_prices.json`: Valoraciones de mercado en caché.
+*   `data/precios_historicos.csv`: Datos históricos de precios.
 
 ---
 
-## ✅ Características Clave
-*   **Privacidad Total:** Funciona 100% offline. Ningún dato sale de tu máquina.
-*   **Seguimiento Automático:** Actualización de precios de fondos vía internet (opcional).
-*   **Análisis de Salud:** Cálculo de "Runway" (meses de libertad) y Tasa de Ahorro basado en gastos reales.
-*   **Escenarios:** Proyecciones a futuro (Pesimista/Realista/Optimista) para ayudarte a planificar.
+## 🛠 Stack Tecnológico
+- **Motor:** Python 3.12 / Pandas
+- **Interfaz:** Flask / Bootstrap 5
+- **Visualización:** ECharts.js
+- **Automatización:** Scrapers locales
 
 ---
-
-## 🧠 Herramientas Inteligentes
-
-Este programa incluye varias funcionalidades avanzadas para automatizar y mejorar la gestión financiera:
-
-*   **Motor de Reconstrucción de Cartera:** Olvida mantener la cartera a mano. El sistema reconstruye tu posición actual procesando cronológicamente cada compra, venta y ajuste desde el saldo inicial.
-*   **Actualizador de Precios Automático:** Scraper integrado que consulta fuentes financieras (QueFondos) para obtener el valor liquidativo de tus fondos mediante el ISIN.
-*   **Gestor de Gastos Recurrentes:** Calcula automáticamente tus gastos fijos (Netflix, alquiler, seguros) proyectándolos en el tiempo para que el flujo de caja sea siempre realista.
-*   **Prorrateo Inteligente de Gastos Extraordinarios:** No dejes que un seguro anual arruine tus gráficos de un mes. El sistema detecta gastos extraordinarios y los prorratea para mostrarte tu capacidad de ahorro real.
-*   **Proyecciones Multiescenario:** Algoritmo de previsión que combina tu flujo de caja neto con el rendimiento esperado de tus inversiones para proyectar tu patrimonio a 6 meses y a cierre de año.
-*   **Visualización Avanzada con ECharts:** Gráficos dinámicos tipo *Sunburst* para ver la jerarquía de tu patrimonio y gráficos de área para distinguir el capital invertido de la plusvalía real.
+Desarrollado por [Rubenpombo](https://github.com/Rubenpombo)

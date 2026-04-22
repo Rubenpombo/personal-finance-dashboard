@@ -36,19 +36,22 @@
         <div class="row g-4 mb-4">
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
-                    <div class="text-uppercase text-muted fw-bold small mb-2">Patrimonio Neto</div>
+                    <div class="text-uppercase text-muted fw-bold small mb-1">Patrimonio Neto</div>
+                    <div class="text-muted small mb-2" style="font-size: 0.75rem; color: #cbd5e1 !important;">inversiones + cash</div>
                     <div class="fs-2 fw-bold text-dark">{{ "{:,.2f}".format(portfolio.total_patrimonio) }} €</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
-                    <div class="text-uppercase text-muted fw-bold small mb-2">Capital Invertido</div>
+                    <div class="text-uppercase text-muted fw-bold small mb-1">Capital Invertido</div>
+                    <div class="text-muted small mb-2" style="font-size: 0.75rem; color: #cbd5e1 !important;">fondos (de tu bolsillo)</div>
                     <div class="fs-2 fw-bold text-primary">{{ "{:,.2f}".format(portfolio.total_inversion) }} €</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
-                    <div class="text-uppercase text-muted fw-bold small mb-2">Plusvalía Total</div>
+                    <div class="text-uppercase text-muted fw-bold small mb-1">Plusvalía Total</div>
+                    <div class="text-muted small mb-2" style="font-size: 0.75rem; color: #cbd5e1 !important;">beneficio acumulado</div>
                     <div class="fs-2 fw-bold" style="color: {{ '#10b981' if portfolio.beneficio_total_abs >= 0 else '#ef4444' }}">
                         {{ "{:,.2f}".format(portfolio.beneficio_total_abs) }} €
                     </div>
@@ -56,7 +59,8 @@
             </div>
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
-                    <div class="text-uppercase text-muted fw-bold small mb-2">Rentabilidad</div>
+                    <div class="text-uppercase text-muted fw-bold small mb-1">Rentabilidad</div>
+                    <div class="text-muted small mb-2" style="font-size: 0.75rem; color: #cbd5e1 !important;">rendimiento inversión</div>
                     <div class="fs-2 fw-bold" style="color: {{ '#10b981' if portfolio.rentabilidad_total >= 0 else '#ef4444' }}">
                         {{ "{:,.2f}".format(portfolio.rentabilidad_total) }} %
                     </div>
@@ -148,7 +152,8 @@
             </div>
             <div class="col-md-3">
                 <div class="card border-0 shadow-sm p-4 bg-white rounded-4 h-100">
-                    <div class="text-uppercase text-muted fw-bold small mb-2">Runway</div>
+                    <div class="text-uppercase text-muted fw-bold small mb-1">Runway</div>
+                    <div class="text-muted small mb-2" style="font-size: 0.75rem; color: #cbd5e1 !important;">meses de libertad (cash/gastos)</div>
                     <div class="fs-3 fw-bold text-info">{{ "{:,.2f}".format(portfolio.runway_months) }}</div>
                 </div>
             </div>
@@ -184,42 +189,8 @@
                     </div>
                     <div class="card-body">
                         <!-- Sankey Diagram -->
-                        <div class="mb-5">
+                        <div class="mb-2">
                             <div id="chart-sankey" style="width: 100%; height: 500px;"></div>
-                        </div>
-                        
-                        <div class="row border-top pt-4">
-                            <div class="col-md-6">
-                                <h6 class="text-center text-success fw-bold mb-3">Distribución Ingresos</h6>
-                                <div id="chart-monthly-ing" style="width: 100%; height: 350px;"></div>
-                                <div class="text-center mt-2 fw-bold text-success fs-5" id="total-ing-display">{{ "{:,.2f}".format(monthly_detail.total_ing) }} €</div>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-center text-danger fw-bold mb-3">Distribución Gastos</h6>
-                                <div id="chart-monthly-gas" style="width: 100%; height: 350px;"></div>
-                                <div class="text-center mt-2 fw-bold text-danger fs-5" id="total-gas-display">{{ "{:,.2f}".format(monthly_detail.total_gas) }} €</div>
-                            </div>
-                        </div>
-
-                        <!-- Drill-down Table (Hidden by default) -->
-                        <div id="drilldown-container" class="mt-4 p-4 bg-light rounded-4 d-none">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="fw-bold m-0" id="drilldown-title">Detalle de Categoría</h6>
-                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="hideDrilldown()">CERRAR</button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="table table-hover table-sm">
-                                    <thead class="text-muted small">
-                                        <tr>
-                                            <th>Fecha</th>
-                                            <th>Concepto</th>
-                                            <th class="text-end">Cantidad</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="drilldown-body" class="small">
-                                    </tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -240,30 +211,39 @@
             </div>
         </div>
 
-        <!-- Forecast / Scenarios -->
+        <!-- Forecast / Scenarios with Tabs -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white p-4 border-0">
-                <h5 class="fw-bold m-0">Previsión Patrimonio (Estimación a {{ forecast.months_6 }} meses)</h5>
+            <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold m-0">Previsión Patrimonio</h5>
+                <ul class="nav nav-pills small" id="forecastTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active py-1 px-3" id="f6m-tab" data-bs-toggle="pill" data-bs-target="#f6m" type="button" role="tab">6 MESES</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3" id="feoy-tab" data-bs-toggle="pill" data-bs-target="#feoy" type="button" role="tab">FIN DE AÑO ({{ forecast.eoy_year }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link py-1 px-3" id="f12m-tab" data-bs-toggle="pill" data-bs-target="#f12m" type="button" role="tab">12 MESES</button>
+                    </li>
+                </ul>
             </div>
             <div class="card-body">
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4 border-start border-4 border-success bg-light shadow-sm">
-                            <span class="text-muted small fw-bold text-uppercase">Optimista (+10%)</span>
-                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.optimistic) }} €</div>
-                        </div>
+                <div class="tab-content" id="forecastTabsContent">
+                    <!-- 6 Months -->
+                    <div class="tab-pane fade show active" id="f6m" role="tabpanel">
+                        {% set sc = forecast.scenarios_6m %}
+                        {% include 'includes/_forecast_grid.html' %}
                     </div>
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4 border-start border-4 border-primary bg-light shadow-sm">
-                            <span class="text-muted small fw-bold text-uppercase">Realista (+3.5%)</span>
-                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.realistic) }} €</div>
-                        </div>
+                    <!-- End of Year -->
+                    <div class="tab-pane fade" id="feoy" role="tabpanel">
+                        {% set sc = forecast.scenarios_eoy %}
+                        {% include 'includes/_forecast_grid.html' %}
+                        <p class="text-center text-muted small mt-3 mb-0">Estimación basada en los {{ forecast.months_eoy }} meses restantes del año.</p>
                     </div>
-                    <div class="col-md-4">
-                        <div class="p-3 rounded-4 border-start border-4 border-danger bg-light shadow-sm">
-                            <span class="text-muted small fw-bold text-uppercase">Pesimista (-10%)</span>
-                            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(forecast.scenarios_6m.pessimistic) }} €</div>
-                        </div>
+                    <!-- 12 Months -->
+                    <div class="tab-pane fade" id="f12m" role="tabpanel">
+                        {% set sc = forecast.scenarios_12m %}
+                        {% include 'includes/_forecast_grid.html' %}
                     </div>
                 </div>
             </div>
@@ -290,6 +270,7 @@
     });
 
     // Data from Jinja
+    var totalPortfolioValue = {{ portfolio.total_patrimonio | tojson }};
     var dataCashflow = {{ charts.cashflow | tojson if charts.cashflow else 'null' }};
     var dataAllocation = {{ charts.allocation | tojson if charts.allocation else 'null' }};
     var dataPerformance = {{ charts.performance | tojson if charts.performance else 'null' }};
@@ -339,45 +320,26 @@
     // Initialize All Charts
     initChart('chart-history', dataHistory);
     initChart('chart-cashflow', dataCashflow);
+
+    if (dataAllocation) {
+        dataAllocation.tooltip = {
+            trigger: 'item',
+            formatter: (params) => {
+                const val = params.value.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                // If ECharts doesn't provide percent for sunburst, calculate it manually from total
+                let pctVal = params.percent;
+                if (pctVal === undefined && totalPortfolioValue > 0) {
+                    pctVal = (params.value / totalPortfolioValue) * 100;
+                }
+                const pct = (pctVal !== undefined) ? `<br/>${pctVal.toFixed(1)}%` : '';
+                return `<b>${params.name}</b><br/>${val} €${pct}`;
+            }
+        };
+    }
     initChart('chart-allocation', dataAllocation);
     initChart('chart-performance', dataPerformance);
     
     let sankeyChart = initChart('chart-sankey', createSankeyOption(sankeyDataInitial));
-    let ingChart = initChart('chart-monthly-ing', createPieOption('Ingresos', monthlyDetail.ingresos, 'success'));
-    let gasChart = initChart('chart-monthly-gas', createPieOption('Gastos', monthlyDetail.gastos, 'danger'));
-
-    // Drill-down Logic
-    if (gasChart) {
-        gasChart.on('click', function (params) {
-            showDrilldown(params.name);
-        });
-    }
-
-    function showDrilldown(category) {
-        const container = document.getElementById('drilldown-container');
-        const title = document.getElementById('drilldown-title');
-        const body = document.getElementById('drilldown-body');
-        
-        const filtered = (monthlyDetail.gastos_raw || []).filter(g => g.categoria.toUpperCase() === category.toUpperCase());
-        
-        if (filtered.length === 0) return;
-
-        title.innerText = `Detalle de Categoría: ${category.toUpperCase()}`;
-        body.innerHTML = filtered.map(g => `
-            <tr>
-                <td>${g.fecha_str}</td>
-                <td>${g.concepto}</td>
-                <td class="text-end fw-bold">${g.cantidad.toLocaleString('es-ES', {minimumFractionDigits: 2})} €</td>
-            </tr>
-        `).join('');
-        
-        container.classList.remove('d-none');
-        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    function hideDrilldown() {
-        document.getElementById('drilldown-container').classList.add('d-none');
-    }
 
     // Fix for charts initialized in hidden tabs
     document.querySelectorAll('button[data-bs-toggle="pill"]').forEach(tabEl => {
@@ -394,16 +356,11 @@
         const response = await fetch(`/api/monthly-detail/${period}?window=${windowVal}`);
         const data = await response.json();
         
-        // Update global state for drill-down
+        // Update global state
         monthlyDetail = data.detail;
-        hideDrilldown();
 
         document.getElementById('current-month-display').innerText = data.detail.periodo;
-        document.getElementById('total-ing-display').innerText = data.detail.total_ing.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
-        document.getElementById('total-gas-display').innerText = data.detail.total_gas.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
         
-        if (ingChart) ingChart.setOption(createPieOption('Ingresos', data.detail.ingresos, 'success'), true);
-        if (gasChart) gasChart.setOption(createPieOption('Gastos', data.detail.gastos, 'danger'), true);
         if (sankeyChart) {
             const opt = createSankeyOption(data.sankey);
             if (opt) {

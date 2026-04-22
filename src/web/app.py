@@ -78,16 +78,125 @@ def update_prices():
 def data_view():
     activos, cartera, ingresos, gastos, aportaciones = logic.load_data()
     
-    def df_to_html(df):
+    def df_to_html(df, sort_col=None):
         if df is None or df.empty: return None
+        if sort_col and sort_col in df.columns:
+            df = df.sort_values(by=sort_col, ascending=False)
         return df.to_html(classes="table table-striped table-sm", index=False, float_format=lambda x: "{:,.2f}".format(x))
 
     tables = {
         'Cartera': df_to_html(logic.get_portfolio_summary().get('df_cartera')),
-        'Ingresos': df_to_html(ingresos),
-        'Gastos': df_to_html(gastos)
+        'Aportaciones': df_to_html(aportaciones, sort_col='fecha'),
+        'Ingresos': df_to_html(ingresos, sort_col='fecha'),
+        'Gastos': df_to_html(gastos, sort_col='fecha')
     }
-    return render_template('data.html', tables=tables)
+    
+    # Assets for the dropdown
+    assets_list = []
+    if activos is not None:
+        assets_list = activos[['id', 'nombre']].to_dict('records')
+        
+    return render_template('data.html', 
+                           tables=tables, 
+                           assets=assets_list, 
+                           now_date=pd.Timestamp.now().strftime('%Y-%m-%d'))
+
+@app.route('/add-contribution', methods=['POST'])
+def add_contribution():
+    from flask import request
+    data = {
+        'fecha': request.form.get('fecha'),
+        'tipo': request.form.get('tipo'),
+        'id_activo': request.form.get('id_activo'),
+        'cantidad_dinero': request.form.get('cantidad_dinero'),
+        'titulos': request.form.get('titulos'),
+        'precio_titulo': request.form.get('precio_titulo')
+    }
+    notas = request.form.get('notas') or 'Manual'
+    
+    success, message, is_duplicate = logic.add_contribution(data, notas=notas)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+        
+    return redirect(url_for('data_view'))
+
+@app.route('/add-transfer', methods=['POST'])
+def add_transfer():
+    from flask import request
+    data = {
+        'fecha': request.form.get('fecha'),
+        'id_origen': request.form.get('id_origen'),
+        'id_destino': request.form.get('id_destino'),
+        'cantidad_dinero': request.form.get('cantidad_dinero'),
+        'titulos_origen': request.form.get('titulos_origen'),
+        'precio_origen': request.form.get('precio_origen'),
+        'titulos_destino': request.form.get('titulos_destino'),
+        'precio_destino': request.form.get('precio_destino'),
+        'notas': request.form.get('notas')
+    }
+    
+    success, message = logic.add_transfer(data)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+        
+    return redirect(url_for('data_view'))
+
+@app.route('/import-myinvestor', methods=['POST'])
+def import_myinvestor():
+    from flask import request, session
+    
+    # Check if this is a confirmation of a preview
+    if request.form.get('confirm') == 'true':
+        data = {
+            'fecha': request.form.get('fecha'),
+            'tipo': request.form.get('tipo'),
+            'id_activo': request.form.get('id_activo'),
+            'cantidad_dinero': request.form.get('cantidad_dinero'),
+            'titulos': request.form.get('titulos'),
+            'precio_titulo': request.form.get('precio_titulo')
+        }
+        force = request.form.get('force') == 'true'
+        success, message, is_duplicate = logic.import_myinvestor_data(data, force=force)
+        
+        if success:
+            flash(message, 'success')
+            session.pop('import_preview', None)
+        elif is_duplicate:
+            flash(message, 'warning')
+            session['import_preview'] = data # Keep preview to show the 'Force' button
+            session['import_is_duplicate'] = True
+        else:
+            flash(message, 'danger')
+        return redirect(url_for('data_view'))
+
+    # Initial parsing / Preview
+    subject = request.form.get('subject')
+    if not subject:
+        flash("El asunto está vacío", "warning")
+        return redirect(url_for('data_view'))
+        
+    data, error = logic.parse_myinvestor_subject(subject)
+    if error:
+        flash(error, 'danger')
+        return redirect(url_for('data_view'))
+    
+    # Save to session to show preview in data_view
+    session['import_preview'] = data
+    session.pop('import_is_duplicate', None)
+    return redirect(url_for('data_view'))
+
+@app.route('/cancel-import')
+def cancel_import():
+    from flask import session
+    session.pop('import_preview', None)
+    session.pop('import_is_duplicate', None)
+    return redirect(url_for('data_view'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

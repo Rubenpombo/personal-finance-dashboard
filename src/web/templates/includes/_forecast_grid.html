@@ -1,0 +1,20 @@
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="p-3 rounded-4 border-start border-4 border-success bg-light shadow-sm">
+            <span class="text-muted small fw-bold text-uppercase">Optimista (+10% anual)</span>
+            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(sc.optimistic) }} €</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 rounded-4 border-start border-4 border-primary bg-light shadow-sm">
+            <span class="text-muted small fw-bold text-uppercase">Realista (+3.5% anual)</span>
+            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(sc.realistic) }} €</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="p-3 rounded-4 border-start border-4 border-danger bg-light shadow-sm">
+            <span class="text-muted small fw-bold text-uppercase">Pesimista (-10% puntual)</span>
+            <div class="fs-4 fw-bold text-dark">{{ "{:,.2f}".format(sc.pessimistic) }} €</div>
+        </div>
+    </div>
+</div>

@@ -1,7 +1,7 @@
 # Data
 data/
-*.csv
 !data/.keep
+*.pdf
 
 # Python
 .venv/
