@@ -11,19 +11,19 @@ Un motor financiero de nivel profesional para el seguimiento del patrimonio neto
 ## 🖼️ Funcionalidades Destacadas
 
 ### 📊 Seguimiento Holístico del Patrimonio
-<img src="imgs/expenses.png" alt="Resumen Dashboard" width="900">
+<img src="imgs/flujo_caja.png" alt="Resumen Dashboard" width="900">
 
-Visibilidad en tiempo real del **Patrimonio Neto**, **Capital Invertido** y **Plusvalías**. El motor calcula tu **Runway Financiero** basándose en tu estilo de vida medio.
+Aprovecha modelos predictivos para calcular tu patrimonio futuro, runaway entre otros.
 
 ### 📈 Distribución de Activos de Precisión
 <img src="imgs/Inversiones.png" alt="Distribución de Activos" width="900">
 
-Visualiza tu exposición al riesgo mediante gráficos Sunburst interactivos. El sistema monitoriza el rendimiento a nivel de activo individual y el ROI en tiempo real.
+Visualiza tu exposición al riesgo, rendimiento a nivel de activo individual y el ROI en tiempo real.
 
 ### 💸 Inteligencia de Flujo de Caja y Ahorro
-<img src="imgs/flujo_caja.png" alt="Análisis de Flujo de Caja" width="900">
+<img src="imgs/expenses.png" alt="Análisis de gastos" width="900">
 
-Prorratea picos anuales para revelar tu **Tasa de Ahorro Mensual Real**. Utiliza modelos predictivos para proyectar tu patrimonio a 6 meses y fin de año.
+Categoriza tus gastos y adelantate a los que vienen.
 
 *Nota: Los datos mostrados en las capturas son artificiales.*
 
