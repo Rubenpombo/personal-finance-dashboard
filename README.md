@@ -1,109 +1,120 @@
-# Personal Wealth Management System (Personal Finance)
+# 💰 Personal Wealth Management
+> **Private, Local, and Intelligent Financial Ecosystem.**
 
-[README_ES](README_ES.md)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-black.svg?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
 
-A **private, local, and modern** financial dashboard designed to give you total control over your net worth, savings, and investments. Your data is yours and lives exclusively on your machine.
-
-![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)
+A professional-grade financial engine for net worth, savings, and investment tracking. All logic executes locally; your data never leaves your infrastructure.
 
 ---
 
-## 🚀 Quick Start
+## 🖼️ Feature Spotlight
 
-### 1. Installation
+### 📊 Holistic Net Worth Tracking
+<img src="imgs/expenses.png" alt="Main Dashboard" width="900">
+
+Real-time visibility into **Net Worth**, **Invested Capital**, and **Absolute Gains**. The engine calculates your **Financial Runway** based on your weighted average lifestyle.
+
+### 📈 Precision Asset Allocation
+<img src="imgs/Inversiones.png" alt="Asset Allocation" width="900">
+
+Visualize risk exposure through interactive Sunburst charts. The system monitors performance at the individual asset level, tracking weighted average costs and real-time ROI.
+
+### 💸 Cashflow & Savings Intelligence
+<img src="imgs/flujo_caja.png" alt="Cashflow Analysis" width="900">
+
+Prorates annual spikes to reveal your **True Monthly Savings Rate**. Utilizes predictive models to project wealth trajectory over 6-month and EOY horizons.
+
+*Data shown in screenshots is artificial.*
+
+---
+
+## 🚀 Deployment
+
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/personal-finance.git
+git clone https://github.com/Rubenpombo/personal-finance.git
 cd personal-finance
 
-# 2. Create virtual environment and install dependencies
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. Prepare your data (See CSV Structure below)
-# Create the data/ folder and your base CSV files.
-
-# 4. Start the application
 ./run.sh
 ```
-Open your browser at `http://localhost:8501`.
+> **Default endpoint:** `http://localhost:8501`
 
 ---
 
-## 📐 CSV File Structure (Configuration)
+## 📐 Data Architecture
+Initialize your workspace by copying files from `/data_template` into a new `/data` directory.
 
-To start, create these files in the `/data` folder. Ensure you respect the **exact headers**.
+<details>
+<summary><b>📂 Portfolio Configuration (activos.csv, aportaciones.csv)</b></summary>
 
-### 1. Wealth Configuration
-**`data/activos.csv`** (Your product catalog)
+### `activos.csv` (Asset Catalog)
+| Column | Description | Supported Values / Example |
+| :--- | :--- | :--- |
+| `id` | Unique identifier (Primary Key). | `SP500_VANGUARD` |
+| `nombre` | Human-readable name. | `Vanguard S&P 500 UCITS ETF` |
+| `isin` | Asset ISIN or 'CASH'. | `IE00B3XXRP09`, `CASH` |
+| `tipo` | Asset class for allocation logic. | `Equity`, `Fixed Income`, `Cash`, `Commodities` |
+| `fuente` | Valuation source. | `quefondos` (Automatic scraping), `manual` |
+| `precio_actual`| Last known price (used if manual). | `115.42` |
+
+### `aportaciones.csv` (Transactions)
 | Column | Description | Example |
 | :--- | :--- | :--- |
-| `id` | Unique ID (Key for everything). | `SP500_ETF` |
-| `nombre` | Readable name. | `Vanguard S&P 500 UCITS ETF` |
-| `isin` | ISIN (funds) or 'CASH' (money). | `IE00B3XXRP09` |
-| `tipo` | `Efectivo`, `Renta Variable`, `Renta Fija`. | `Renta Variable` |
-| `fuente` | `quefondos` (auto) or `manual`. | `quefondos` |
+| `fecha` | Operation date (YYYY-MM-DD). | `2026-02-15` |
+| `tipo` | Transaction nature. | `COMPRA`, `VENTA`, `INICIAL`, `AJUSTE_VALOR` |
+| `id_activo` | Target asset ID (from catalog). | `MSCI_WORLD` |
+| `cantidad_dinero` | Gross amount moved. | `1000.00` |
+| `titulos` | Number of units/shares. | `10.5` |
+| `precio_titulo` | Execution price per unit. | `95.23` |
+| `notas` | Optional metadata. | `Monthly savings plan` |
+</details>
 
-**`data/aportaciones.csv`** (Your investment movements)
+<details>
+<summary><b>📂 Cashflow Tracking (ingresos.csv, gastos_variables.csv, gastos_recurrentes.csv)</b></summary>
+
+### `ingresos.csv` (Income Log)
+| Column | Description | Example |
+| :--- | :--- | : :--- |
+| `fecha` | Received date. | `2026-01-30` |
+| `cantidad` | Net amount. | `2500.00` |
+| `concepto` | Description. | `Payroll` |
+| `categoria` | Grouping. | `Salary` |
+
+### `gastos_variables.csv` (Variable Expenses)
 | Column | Description | Example |
 | :--- | :--- | :--- |
-| `fecha` | Date (YYYY-MM-DD). | `2026-02-15` |
-| `tipo` | `INICIAL`, `COMPRA` (Buy), `VENTA` (Sell) or `AJUSTE_VALOR`. | `COMPRA` |
-| `id_activo` | ID of the asset. | `MSCI_WORLD` |
-| `cantidad_dinero` | Total money invested/received. | `1000` |
-| `titulos` | Number of shares. | `10.5` |
-| `precio_titulo` | Price per share. | `95.23` |
-
----
-
-### 2. Savings Configuration (Flow)
-**`data/ingresos.csv`**
-| Column | Example |
-| :--- | :--- |
-| `fecha` | `2026-01-30` |
-| `cantidad` | `2100.50` |
-| `concepto` | `January Salary` |
-| `categoria` | `Salary` |
-
-**`data/gastos_variables.csv`** (Day-to-day expenses)
-| Column | Description | Example |
-| :--- | :--- | :--- |
-| `fecha` | Date. | `2026-02-05` |
+| `fecha` | Expense date. | `2026-02-05` |
 | `cantidad` | Amount. | `55.20` |
-| `categoria` | Grouping for charts. | `Groceries` |
-| `concepto` | Detail. | `Walmart` |
+| `categoria` | Visualization tag. | `Food` |
+| `concepto` | Detail. | `Supermarket` |
 
-**`data/gastos_recurrentes.csv`** (Automatic monthly fixed costs)
+### `gastos_recurrentes.csv` (Fixed Monthly Commitments)
 | Column | Description | Example |
 | :--- | :--- | :--- |
-| `dia` | Day of the month charged. | `5` |
-| `cantidad` | Fixed amount. | `12.99` |
-| `categoria` | Category. | `Subscriptions` |
+| `dia` | Day of month (1-31). | `5` |
+| `cantidad` | Fixed monthly amount. | `12.99` |
+| `categoria` | Projection tag. | `Subscriptions` |
 | `concepto` | Name. | `Netflix` |
+</details>
 
 ---
 
-## 📂 Auto-Generated Files (Do Not Edit)
-The system will generate or overwrite these files:
-*   `data/cartera.csv`: Calculated current portfolio state.
-*   `data/precios_historicos.csv`: History of prices downloaded from the web.
+## 📂 System Artifacts
+*   `data/cartera.csv`: Current calculated state (Snapshot).
+*   `data/latest_prices.json`: Cached market valuations.
+*   `data/precios_historicos.csv`: Time-series market data.
 
 ---
 
-## ✅ Key Features
-*   **Total Privacy:** Works 100% offline. No data leaves your machine.
-*   **Auto Tracking:** Fund price updates via web scraping (optional).
-*   **Health Analysis:** "Runway" calculation (freedom months) and Savings Rate based on real expenses.
-*   **Scenarios:** Future projections (Pessimistic/Realistic/Optimistic) to help you plan.
+## 🛠 Tech Stack
+- **Engine:** Python 3.12 / Pandas
+- **Interface:** Flask / Bootstrap 5
+- **Data Viz:** ECharts.js
+- **Automation:** Local Scrapers
 
 ---
-
-## 🧠 Intelligent Tools
-
-*   **Automated Portfolio Reconstruction**: Rebuilds your entire financial state from raw transaction history.
-*   **Auto-Market Data**: Integrated scraper fetches latest fund NAVs via ISIN.
-*   **Smart Recurring Expenses**: Automatically projects fixed costs for accurate cash flow without manual entry.
-*   **Expense Prorating**: Smooths out annual spikes (like insurance) to reveal your true monthly savings rate.
-*   **Multi-Scenario Forecasting**: Projects 6-month and EOY net worth using 3 adjustable growth models.
-*   **Advanced Visualization**: Interactive Sunburst and Area charts for deep portfolio insights.
+Developed by [Rubenpombo](https://github.com/Rubenpombo)

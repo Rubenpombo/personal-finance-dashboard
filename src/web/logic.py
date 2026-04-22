@@ -1,12 +1,227 @@
 import pandas as pd
 import json
 import os
+import re
 import market_data
 from datetime import datetime
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data')
 PRICES_FILE = os.path.join(DATA_DIR, 'latest_prices.json')
 HISTORY_FILE = os.path.join(DATA_DIR, 'precios_historicos.csv')
+
+def _clean_numeric(s):
+    """Robustly converts a string with numbers (commas or dots) to float."""
+    if not s: return 0.0
+    # If there are both dots and commas, assume dot is thousands and comma is decimal (European)
+    # or vice versa. Common case: 1.250,50 or 1,250.50
+    s = s.strip().replace("EUR", "").replace("$", "").strip()
+    if "," in s and "." in s:
+        if s.find(".") < s.find(","): # 1.250,50
+            s = s.replace(".", "").replace(",", ".")
+        else: # 1,250.50
+            s = s.replace(",", "")
+    elif "," in s: # 500,50
+        s = s.replace(",", ".")
+    
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+def _normalize_text(text):
+    """Removes accents and converts to lowercase for robust comparison."""
+    import unicodedata
+    if not text: return ""
+    text = str(text).lower().strip()
+    return "".join(c for c in unicodedata.normalize('NFD', text)
+                  if unicodedata.category(c) != 'Mn')
+
+def parse_myinvestor_subject(subject_line):
+    """
+    Parses the subject and returns a dict with the extracted data, 
+    but DOES NOT save anything yet.
+    """
+    try:
+        # Regex handles flexible spacing and both dot/comma (captured as string for _clean_numeric)
+        pattern = r"#\s*(\d{2}/\d{2}/\d{4})\s*#\s*(\w+)\s*#\s*(.*?)\s*#\s*TIT:\s*([\d.,]+)\s*#\s*PRE:\s*([\d.,]+)\s*#\s*([\d.,]+)\s*EUR"
+        match = re.search(pattern, subject_line)
+        
+        if not match:
+            return None, "Formato de asunto no reconocido."
+
+        fecha_str, tipo_raw, nombre_activo_raw, titulos_raw, precio_raw, importe_raw = match.groups()
+
+        fecha = datetime.strptime(fecha_str, "%d/%m/%Y").strftime("%Y-%m-%d")
+        tipo = "COMPRA" if "SUSCRIPCION" in tipo_raw.upper() else "VENTA"
+        
+        # Improvement 3: Robust numeric cleaning
+        titulos = _clean_numeric(titulos_raw)
+        precio = _clean_numeric(precio_raw)
+        importe = _clean_numeric(importe_raw)
+
+        # Asset Mapping (Improvement: Normalize both for accent-insensitive search)
+        activos, _, _, _, _ = load_data()
+        if activos is None: return None, "Error cargando activos."
+
+        search_norm = _normalize_text(nombre_activo_raw)
+        activos['nombre_norm'] = activos['nombre'].apply(_normalize_text)
+
+        # 1. Try direct containment of normalized strings
+        asset_match = activos[activos['nombre_norm'].str.contains(search_norm, regex=False)]
+        
+        # 2. If no match, try the inverse (is the catalog name contained in the email string?)
+        if asset_match.empty:
+            asset_match = activos[activos.apply(lambda row: row['nombre_norm'] in search_norm, axis=1)]
+
+        # 3. Last resort: split search string into words and check if MOST words match
+        if asset_match.empty:
+            words = [w for w in search_norm.split() if len(w) > 3] # only significant words
+            if words:
+                # Check how many significant words from search are in the catalog name
+                def score_match(name_norm):
+                    return sum(1 for w in words if w in name_norm)
+                
+                activos['match_score'] = activos['nombre_norm'].apply(score_match)
+                best_score = activos['match_score'].max()
+                if best_score >= len(words) * 0.6: # At least 60% of significant words match
+                    asset_match = activos[activos['match_score'] == best_score]
+
+        if asset_match.empty:
+            return None, f"Activo no encontrado: {nombre_activo_raw}"
+            
+        asset_info = asset_match.iloc[0].to_dict()
+        
+        return {
+            'fecha': fecha,
+            'tipo': tipo,
+            'id_activo': asset_info['id'],
+            'nombre_activo': asset_info['nombre'],
+            'cantidad_dinero': importe,
+            'titulos': titulos,
+            'precio_titulo': precio,
+            'subject_original': subject_line
+        }, None
+    except Exception as e:
+        return None, f"Error al parsear: {str(e)}"
+
+def add_contribution(data, force=False, notas=None):
+    """Saves the provided contribution data to the CSV."""
+    try:
+        fecha_target = pd.to_datetime(data['fecha'])
+        asset_id = data['id_activo']
+        titulos = float(data['titulos'])
+        importe = float(data['cantidad_dinero'])
+        
+        aportaciones_path = os.path.join(DATA_DIR, "aportaciones.csv")
+        
+        # Duplicate check with date margin (Improvement: +/- 2 days)
+        if not force and os.path.exists(aportaciones_path):
+            df_old = pd.read_csv(aportaciones_path)
+            if not df_old.empty:
+                df_old['fecha_dt'] = pd.to_datetime(df_old['fecha'])
+                
+                # Filter by asset, shares and amount exactly
+                # Then check if any of those are within the date margin
+                mask = (df_old['id_activo'] == asset_id) & \
+                       (df_old['titulos'] == titulos) & \
+                       (df_old['cantidad_dinero'] == importe)
+                
+                potential_duplicates = df_old[mask].copy()
+                
+                if not potential_duplicates.empty:
+                    # Check date difference in days
+                    potential_duplicates['days_diff'] = (potential_duplicates['fecha_dt'] - fecha_target).dt.days.abs()
+                    real_duplicates = potential_duplicates[potential_duplicates['days_diff'] <= 2]
+                    
+                    if not real_duplicates.empty:
+                        dup_fecha = real_duplicates.iloc[0]['fecha']
+                        return False, f"Atención: Detectada operación similar el {dup_fecha} (+/- 2 días).", True
+
+        if notas is None:
+            notas = 'Auto-importado (Preview)' + (' (Forzado)' if force else '')
+
+        new_row = {
+            'fecha': data['fecha'],
+            'tipo': data['tipo'],
+            'id_activo': asset_id,
+            'cantidad_dinero': importe,
+            'titulos': titulos,
+            'precio_titulo': float(data['precio_titulo']),
+            'notas': notas
+        }
+
+        df_new = pd.DataFrame([new_row])
+        if os.path.exists(aportaciones_path):
+            df_old = pd.read_csv(aportaciones_path)
+            df_final = pd.concat([df_old, df_new], ignore_index=True)
+        else:
+            df_final = df_new
+            
+        df_final.to_csv(aportaciones_path, index=False)
+        rebuild_portfolio()
+        global _data_cache
+        _data_cache['payload'] = None
+        
+        return True, "Operación guardada correctamente.", False
+    except Exception as e:
+        return False, f"Error al guardar: {str(e)}", False
+
+def import_myinvestor_data(data, force=False):
+    """Saves the already parsed data to the CSV. Compatibility wrapper."""
+    return add_contribution(data, force=force)
+
+def import_myinvestor_subject(subject_line, force=False):
+    # This remains for backward compatibility or simple flow if needed, 
+    # but we'll use the new ones in app.py
+    data, error = parse_myinvestor_subject(subject_line)
+    if error: return False, error, False
+    return add_contribution(data, force=force)
+
+def add_transfer(data):
+    """
+    Handles a fund transfer by creating two linked records:
+    1. A 'TRASPASO_SALIDA' (Exit) from the source asset.
+    2. A 'TRASPASO_ENTRADA' (Entry) to the target asset.
+    """
+    try:
+        import uuid
+        transfer_id = str(uuid.uuid4())[:8]
+        fecha = data['fecha']
+        importe = float(data['cantidad_dinero'])
+        
+        # 1. Exit record
+        exit_data = {
+            'fecha': fecha,
+            'tipo': 'TRASPASO_SALIDA',
+            'id_activo': data['id_origen'],
+            'cantidad_dinero': importe,
+            'titulos': float(data['titulos_origen']),
+            'precio_titulo': float(data['precio_origen'])
+        }
+        
+        # 2. Entry record
+        entry_data = {
+            'fecha': fecha,
+            'tipo': 'TRASPASO_ENTRADA',
+            'id_activo': data['id_destino'],
+            'cantidad_dinero': importe,
+            'titulos': float(data['titulos_destino']),
+            'precio_titulo': float(data['precio_destino'])
+        }
+        
+        notas = f"Traspaso ID: {transfer_id}"
+        if data.get('notas'):
+            notas += f" - {data['notas']}"
+            
+        success1, msg1, _ = add_contribution(exit_data, force=True, notas=notas)
+        if not success1: return False, f"Error en salida: {msg1}"
+        
+        success2, msg2, _ = add_contribution(entry_data, force=True, notas=notas)
+        if not success2: return False, f"Error en entrada: {msg2}"
+        
+        return True, f"Traspaso registrado correctamente (ID: {transfer_id})"
+    except Exception as e:
+        return False, f"Error al procesar traspaso: {str(e)}"
 
 def rebuild_portfolio():
     """Regenerates cartera.csv based on aportaciones.csv (including INICIAL records)"""
@@ -36,7 +251,7 @@ def rebuild_portfolio():
 
                     current = portfolio[asset_id]
 
-                    if tipo == 'INICIAL' or tipo == 'COMPRA':
+                    if tipo in ['INICIAL', 'COMPRA', 'TRASPASO_ENTRADA']:
                         total_cost_old = current['participaciones'] * current['precio_medio_compra']
                         total_cost_new = titulos_op * precio_op
                         new_shares = current['participaciones'] + titulos_op
@@ -50,9 +265,9 @@ def rebuild_portfolio():
                         if tipo == 'COMPRA' and 'CASH_DIG' in portfolio:
                             portfolio['CASH_DIG']['participaciones'] -= cantidad_op
                             
-                    elif tipo == 'VENTA':
+                    elif tipo in ['VENTA', 'TRASPASO_SALIDA']:
                         current['participaciones'] = max(0.0, current['participaciones'] - titulos_op)
-                        if 'CASH_DIG' in portfolio:
+                        if tipo == 'VENTA' and 'CASH_DIG' in portfolio:
                             portfolio['CASH_DIG']['participaciones'] += cantidad_op
                         
                     elif tipo == 'AJUSTE_VALOR':
@@ -284,12 +499,34 @@ def refresh_market_data():
         old_prices = get_latest_prices()
         new_prices = market_data.update_prices(activos)
         
-        # Fallback: If a price is 0 (not found), use the old price if it exists
         final_prices = {}
         for asset_id, price in new_prices.items():
-            if price == 0.0 and asset_id in old_prices and old_prices[asset_id] > 0:
-                final_prices[asset_id] = old_prices[asset_id]
-                print(f"  -> Using fallback price for {asset_id}: {old_prices[asset_id]}")
+            old_p = float(old_prices.get(asset_id, 0.0))
+            
+            # Identify if it's a cash-like asset
+            asset_row = activos[activos['id'] == asset_id].iloc[0]
+            tipo = str(asset_row['tipo']).lower()
+            is_pure_cash = 'efectivo' in tipo or str(asset_row['isin']).upper() == 'CASH'
+            
+            keep_old = False
+            reason = ""
+            
+            if not is_pure_cash:
+                # 1. Block suspicious 1.0 or 0.0 for funds
+                if price == 1.0 or price == 0.0:
+                    keep_old = True
+                    reason = "Scraper error (1.0/0.0 detected)"
+                
+                # 2. Block anomalous volatility (>10% change)
+                elif old_p > 0:
+                    change = abs(price - old_p) / old_p
+                    if change > 0.10:
+                        keep_old = True
+                        reason = f"Anomalous change detected ({round(change*100, 2)}%)"
+            
+            if keep_old and old_p > 0:
+                final_prices[asset_id] = old_p
+                print(f"  -> [SAFETY] Keeping old price for {asset_id}: {old_p} (Reason: {reason})")
             else:
                 final_prices[asset_id] = price
 
@@ -297,7 +534,7 @@ def refresh_market_data():
             with open(PRICES_FILE, 'w') as f:
                 json.dump(final_prices, f)
             save_price_history(final_prices)
-            return True, "Precios actualizados e historial guardado (con fallbacks si fue necesario)."
+            return True, "Precios actualizados (Escudo de seguridad activo)."
         except Exception as e:
             return False, f"Error guardando precios: {e}"
     return False, "Error cargando activos."
@@ -313,15 +550,19 @@ def get_portfolio_summary():
     df['plusvalia'] = (df['valor_mercado'] - df['coste_total']).round(2)
     df['rentabilidad'] = df.apply(lambda row: round(row['plusvalia'] / row['coste_total'] * 100, 2) if row['coste_total'] != 0 else 0, axis=1)
     total_patrimonio = round(df['valor_mercado'].sum(), 2)
-    total_inversion = round(df['coste_total'].sum(), 2)
-    beneficio_total_abs = round(total_patrimonio - total_inversion, 2)
     
+    # Identify non-cash assets for investment metrics
     df['tipo_norm'] = df['tipo'].str.lower().str.strip()
+    inv_mask = (df['tipo_norm'] != 'efectivo') & (df['isin'].str.upper() != 'CASH')
+    
+    total_inversion = round(df[inv_mask]['coste_total'].sum(), 2)
+    beneficio_total_abs = round(df[inv_mask]['plusvalia'].sum(), 2)
+    
     equity_mask = df['tipo_norm'].str.contains('variable') | df['tipo_norm'].str.contains('stock') | df['tipo_norm'].str.contains('acción')
     equity_value = round(df[equity_mask]['valor_mercado'].sum(), 2)
     valor_riesgo = equity_value
     pct_riesgo = round((valor_riesgo / total_patrimonio * 100) if total_patrimonio > 0 else 0, 2)
-    liquidez_value = round(df[df['tipo_norm'] == 'efectivo']['valor_mercado'].sum(), 2)
+    liquidez_value = round(df[~inv_mask]['valor_mercado'].sum(), 2)
     
     # Calculate Runway & Savings Rate (Make them optional and 0 if no data)
     flow_data = get_financial_flow(None) 
@@ -339,7 +580,7 @@ def get_portfolio_summary():
         'beneficio_total_abs': beneficio_total_abs,
         'equity_value': equity_value, 
         'stable_value': round(total_patrimonio - equity_value, 2), 
-        'rentabilidad_total': round(((total_patrimonio - total_inversion) / total_inversion * 100) if total_inversion > 0 else 0, 2), 
+        'rentabilidad_total': round((beneficio_total_abs / total_inversion * 100) if total_inversion > 0 else 0, 2), 
         'pct_riesgo': pct_riesgo, 
         'liquidez': liquidez_value,
         'runway_months': runway_months,
@@ -434,25 +675,23 @@ def get_financial_flow(portfolio_summary=None):
     monthly_net_flow_base = avg_income - weighted_avg_expense
     monthly_net_flow_pessimistic = avg_income - (weighted_avg_expense * 1.20) # 20% buffer
     
-    months = 6
     current_equity = portfolio_summary.get('equity_value', 0) if portfolio_summary else 0
     current_stable = portfolio_summary.get('stable_value', 0) if portfolio_summary else 0
-    
-    future_nw_pessimistic = current_stable + (current_equity * 0.90) + (monthly_net_flow_pessimistic * months)
-    future_nw_realistic = current_stable + (current_equity * 1.035) + (monthly_net_flow_base * months)
-    future_nw_optimistic = current_stable + (current_equity * 1.10) + (monthly_net_flow_base * months)
 
     today = datetime.now()
     eoy_year = today.year
     months_to_eoy = 12 - today.month
     if months_to_eoy < 0: months_to_eoy = 0
-    
-    rate_real_monthly = 0.035 / 6
-    rate_opt_monthly = 0.10 / 6
-    
-    nw_pessimistic_eoy = current_stable + (current_equity * 0.90) + (monthly_net_flow_pessimistic * months_to_eoy)
-    nw_realistic_eoy = current_stable + (current_equity * (1 + rate_real_monthly * months_to_eoy)) + (monthly_net_flow_base * months_to_eoy)
-    nw_optimistic_eoy = current_stable + (current_equity * (1 + rate_opt_monthly * months_to_eoy)) + (monthly_net_flow_base * months_to_eoy)
+
+    def calc_scenario(months):
+        rate_real_monthly = 0.035 / 6 # Consistent with original 3.5% semi-annual
+        rate_opt_monthly = 0.10 / 6  # Consistent with original 10% semi-annual
+        
+        return {
+            'pessimistic': round(current_stable + (current_equity * 0.90) + (monthly_net_flow_pessimistic * months), 2),
+            'realistic': round(current_stable + (current_equity * (1 + rate_real_monthly * months)) + (monthly_net_flow_base * months), 2),
+            'optimistic': round(current_stable + (current_equity * (1 + rate_opt_monthly * months)) + (monthly_net_flow_base * months), 2)
+        }
 
     return {
         'ingresos_ts': ing_m_chart, 
@@ -463,19 +702,11 @@ def get_financial_flow(portfolio_summary=None):
             'avg_expense_extra_prorated': round(avg_expense_extra_prorated, 2),
             'weighted_avg_expense': round(weighted_avg_expense, 2),
             'net_flow': round(monthly_net_flow_base, 2),
-            'months_6': months,
             'months_eoy': months_to_eoy,
             'eoy_year': eoy_year,
-            'scenarios_6m': {
-                'pessimistic': round(future_nw_pessimistic, 2),
-                'realistic': round(future_nw_realistic, 2),
-                'optimistic': round(future_nw_optimistic, 2)
-            },
-            'scenarios_eoy': {
-                'pessimistic': round(nw_pessimistic_eoy, 2),
-                'realistic': round(nw_realistic_eoy, 2),
-                'optimistic': round(nw_optimistic_eoy, 2)
-            }
+            'scenarios_6m': calc_scenario(6),
+            'scenarios_eoy': calc_scenario(months_to_eoy),
+            'scenarios_12m': calc_scenario(12)
         }
     }
 
@@ -572,24 +803,26 @@ def get_sankey_data(periodo=None, window=1):
     if not detail['ingresos'] and not detail['gastos']:
         return {'nodes': [], 'links': []}
 
+    # Use the period determined by detail if None was provided
+    if periodo is None:
+        periodo = detail.get('raw_periodo')
+
     # Load investment data for the period
     _, _, _, _, aportaciones = load_data()
     investments_in_period = 0.0
     investments_by_asset = []
 
-    if not aportaciones.empty:
-        # Filter aportaciones by period
-        if periodo:
-            # Handle window
-            p_end = pd.Period(periodo, freq='M')
-            p_start = p_end - (int(window) - 1)
-            mask = (aportaciones['fecha'].dt.to_period('M') >= p_start) & (aportaciones['fecha'].dt.to_period('M') <= p_end)
-            df_inv = aportaciones[mask & (aportaciones['tipo'] == 'COMPRA')].copy()
-            
-            if not df_inv.empty:
-                investments_in_period = df_inv['cantidad_dinero'].sum()
-                inv_grouped = df_inv.groupby('id_activo')['cantidad_dinero'].sum().reset_index()
-                investments_by_asset = inv_grouped.to_dict('records')
+    if not aportaciones.empty and periodo:
+        # Handle window
+        p_end = pd.Period(periodo, freq='M')
+        p_start = p_end - (int(window) - 1)
+        mask = (aportaciones['fecha'].dt.to_period('M') >= p_start) & (aportaciones['fecha'].dt.to_period('M') <= p_end)
+        df_inv = aportaciones[mask & (aportaciones['tipo'] == 'COMPRA')].copy()
+        
+        if not df_inv.empty:
+            investments_in_period = df_inv['cantidad_dinero'].sum()
+            inv_grouped = df_inv.groupby('id_activo')['cantidad_dinero'].sum().reset_index()
+            investments_by_asset = inv_grouped.to_dict('records')
 
     nodes = []
     links = []

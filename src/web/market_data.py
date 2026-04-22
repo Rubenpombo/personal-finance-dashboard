@@ -13,25 +13,37 @@ def get_price_quefondos(isin):
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
             
-            # Pattern: <span class="floatright">110,020000 EUR</span>
-            # Find all spans with class 'floatright'
+            # Step 1: Look for "Valor liquidativo"
+            label = soup.find(string=re.compile("Valor liquidativo", re.IGNORECASE))
+            if label:
+                # Price is in a span.floatright inside the same container
+                parent_p = label.find_parent('p')
+                if parent_p:
+                    span_price = parent_p.find('span', class_='floatright')
+                    if span_price:
+                        text = span_price.text.strip()
+                        # Capture price parts: "117,990000 EUR" -> 117.99
+                        match = re.search(r'([\d\.,]+)', text)
+                        if match:
+                            num_str = match.group(1)
+                            clean_num = num_str.replace('.', '').replace(',', '.')
+                            try:
+                                return float(clean_num)
+                            except:
+                                pass
+
+            # Step 2: Alternative fallback search
             spans = soup.find_all('span', class_='floatright')
-            
             for s in spans:
-                text = s.text.strip()
-                if "EUR" in text or "USD" in text:
-                    # Extract number: "110,020000 EUR" -> 110.02
-                    # Regex to find number at start
-                    match = re.search(r'([\d\.,]+)', text)
+                if any(x in s.text for x in ["EUR", "USD"]):
+                    match = re.search(r'^([\d\.,]+)', s.text.strip())
                     if match:
                         num_str = match.group(1)
-                        # European format: 1.234,56 -> 1234.56
-                        # Remove dots (thousands), replace comma with dot
-                        clean_num = num_str.replace('.', '').replace(',', '.')
-                        try:
+                        # Avoid catching 1.0 or single digit numbers from references
+                        if len(num_str.replace('.', '').replace(',', '')) > 2:
+                            clean_num = num_str.replace('.', '').replace(',', '.')
                             return float(clean_num)
-                        except:
-                            continue
+
     except Exception as e:
         print(f"QueFondos Error ({isin}): {e}")
     return None
