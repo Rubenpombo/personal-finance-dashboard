@@ -10,20 +10,20 @@ A professional-grade financial engine for net worth, savings, and investment tra
 
 ## 🖼️ Feature Spotlight
 
-### 📊 Holistic Net Worth Tracking
-<img src="imgs/expenses.png" alt="Main Dashboard" width="900">
+### 📊 Net Worth Tracking
+<img src="imgs/flujo_caja.png" alt="Cashflow Dashboard" width="900">
 
-Real-time visibility into **Net Worth**, **Invested Capital**, and **Absolute Gains**. The engine calculates your **Financial Runway** based on your weighted average lifestyle.
+Take advantage of predictive models to project wealth trajectory and Financial Runway.
 
 ### 📈 Precision Asset Allocation
 <img src="imgs/Inversiones.png" alt="Asset Allocation" width="900">
 
-Visualize risk exposure through interactive Sunburst charts. The system monitors performance at the individual asset level, tracking weighted average costs and real-time ROI.
+Visualize risk exposure, monitor assets performance and more.
 
 ### 💸 Cashflow & Savings Intelligence
-<img src="imgs/flujo_caja.png" alt="Cashflow Analysis" width="900">
+<img src="imgs/expenses.png" alt="Cashflow Analysis" width="900">
 
-Prorates annual spikes to reveal your **True Monthly Savings Rate**. Utilizes predictive models to project wealth trajectory over 6-month and EOY horizons.
+Categorize expenses and anticipate to the next ones.
 
 *Data shown in screenshots is artificial.*
 
